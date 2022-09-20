@@ -5,7 +5,7 @@ from sheep_env import SheepEnv
 
 @pytest.mark.unittest
 def test_naive():
-    env = SheepEnv(level=5)
+    env = SheepEnv(level=10)
     obs = env.reset()
     print(env.observation_space)
 

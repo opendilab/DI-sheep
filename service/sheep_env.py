@@ -26,7 +26,7 @@ class Item:
 
 
 class SheepEnv(gym.Env):
-    max_level = 5
+    max_level = 10
     icons = [i for i in range(10)]
     R = 10
 
@@ -52,18 +52,33 @@ class SheepEnv(gym.Env):
             [0, 7],
             [0, 8],
         ][min(4, self.level - 1)]
-        self.total_item_num = 2 * self.level * 6
+        if self.level > 5:
+            self.item_per_icon = 6 + (self.level - 5 + 1) // 2
+            # add non-divisible items
+            self.item_non_div = min(4, self.level - 5)
+        else:
+            self.item_per_icon = 6
+            self.item_non_div = 0
+        self.total_item_num = len(self.icon_pool) * self.item_per_icon + self.item_non_div
 
         self.scene = []
-        self.bucket = deque(maxlen=8)
+        self.bucket = deque(maxlen=self.bucket_length)
 
         for i in range(len(self.icon_pool)):
-            for j in range(6):
+            for j in range(self.item_per_icon):
                 offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
                 row = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
                 column = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
                 item = Item(self.icon_pool[i], offset, row, column)
                 self.scene.append(item)
+        if self.item_non_div > 0:
+            for icon in np.random.choice(self.icon_pool, size=self.item_non_div, replace=False):
+                offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
+                row = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
+                column = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
+                item = Item(icon, offset, row, column)
+                self.scene.append(item)
+
         self.cur_item_num = len(self.scene)
         self.reward_3tiles = self.R * 0.5 / (len(self.scene) // 3)
 
@@ -171,10 +186,10 @@ class SheepEnv(gym.Env):
         for i in range(len(bucket_icon_stat)):
             bucket_obs[i * 3 + bucket_icon_stat[i]] = 1
 
-        global_size = self.total_item_num // 6 + self.bucket_length
+        global_size = self.total_item_num // self.item_per_icon + 1 + self.bucket_length + 1
         global_obs = np.zeros(global_size)
-        global_obs[self.cur_item_num // 6] = 1
-        global_obs[self.cur_item_num // 6 + len(self.bucket)] = 1
+        global_obs[self.cur_item_num // self.item_per_icon] = 1
+        global_obs[self.total_item_num // self.item_per_icon + 1 + len(self.bucket)] = 1
 
         return {
             'item_obs': item_obs,
@@ -192,7 +207,10 @@ class SheepEnv(gym.Env):
                 'item_obs': gym.spaces.Box(0, 1, dtype=np.float32, shape=(self.total_item_num, item_size)),
                 'bucket_obs': gym.spaces.Box(0, 1, dtype=np.float32, shape=(3 * len(self.icons), )),
                 'global_obs': gym.spaces.Box(
-                    0, 1, dtype=np.float32, shape=(self.total_item_num // 6 + self.bucket_length, )
+                    0,
+                    1,
+                    dtype=np.float32,
+                    shape=(self.total_item_num // self.item_per_icon + 1 + self.bucket_length + 1, )
                 ),
                 'action_mask': gym.spaces.Box(0, 1, dtype=np.float32, shape=(self.total_item_num, ))  # TODO
             }
