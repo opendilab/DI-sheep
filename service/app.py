@@ -2,9 +2,13 @@ from flask import Flask, request, jsonify, make_response
 from flask_restplus import Api, Resource, fields
 from sheep_env import SheepEnv
 
-
 flask_app = Flask(__name__)
-app = Api(app=flask_app, version="0.0.1", title="DI-sheep App", description="Play Sheep with Deep Reinforcement Learning, Powered by OpenDILab")
+app = Api(
+    app=flask_app,
+    version="0.0.1",
+    title="DI-sheep App",
+    description="Play Sheep with Deep Reinforcement Learning, Powered by OpenDILab"
+)
 name_space = app.namespace('DI-sheep', description='DI-sheep APIs')
 model = app.model(
     'DI-sheep params', {

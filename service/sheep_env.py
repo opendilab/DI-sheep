@@ -34,10 +34,12 @@ class SheepEnv(gym.Env):
         self.level = level
         assert 1 <= self.level <= self.max_level
         self.bucket_length = bucket_length
+        self._make_game()
+        self._set_space()
 
     def seed(self, seed: int) -> None:
-        self.seed = seed
-        np.random.seed(self.seed)
+        self._seed = seed
+        np.random.seed(self._seed)
 
     def _make_game(self) -> None:
         # TODO wash scene
@@ -192,7 +194,7 @@ class SheepEnv(gym.Env):
                 'global_obs': gym.spaces.Box(
                     0, 1, dtype=np.float32, shape=(self.total_item_num // 6 + self.bucket_length, )
                 ),
-                'action_mask': gym.spaces.Box(0, 1, dtype=np.uint8, shape=(self.total_item_num, ))
+                'action_mask': gym.spaces.Box(0, 1, dtype=np.float32, shape=(self.total_item_num, ))  # TODO
             }
         )
         self.action_space = gym.spaces.Discrete(self.total_item_num)
