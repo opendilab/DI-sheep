@@ -30,7 +30,7 @@ class SheepEnv(gym.Env):
     icons = [i for i in range(10)]
     R = 10
 
-    def __init__(self, level: int, bucket_length: int = 8) -> None:
+    def __init__(self, level: int, bucket_length: int = 7) -> None:
         self.level = level
         assert 1 <= self.level <= self.max_level
         self.bucket_length = bucket_length
