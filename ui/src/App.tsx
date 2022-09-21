@@ -12,8 +12,9 @@ import { randomString, waitTimeout } from './utils';
 import { defaultTheme } from './themes/default';
 import { Icon, Theme } from './themes/interface';
 import { fishermanTheme } from './themes/fisherman';
+import { diTheme } from './themes/di';
 
-const themes = [defaultTheme, fishermanTheme];
+const themes = [defaultTheme, fishermanTheme, diTheme];
 
 const maxLevel = 10;
 
@@ -90,7 +91,7 @@ const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, status, onClick }) => {
 };
 
 const App: FC = () => {
-    const [curTheme, setCurTheme] = useState<Theme<any>>(defaultTheme);
+    const [curTheme, setCurTheme] = useState<Theme<any>>(diTheme);
     const [level, setLevel] = useState<number>(1);
     const [queue, setQueue] = useState<MySymbol[]>([]);
     const [sortedQueue, setSortedQueue] = useState<
@@ -110,7 +111,7 @@ const App: FC = () => {
     useEffect(() => {
         if (!bgmRef.current) return;
         if (bgmOn) {
-            bgmRef.current.volume = 0.0;
+            bgmRef.current.volume = 0.5;
             bgmRef.current.play();
         } else {
             bgmRef.current?.pause();
@@ -355,7 +356,7 @@ const App: FC = () => {
             {/*bgm*/}
             <button className="bgm-button" onClick={() => setBgmOn(!bgmOn)}>
                 {bgmOn ? '🔊' : '🔈'}
-                <audio ref={bgmRef} loop src="/sound-disco.mp3" />
+                <audio ref={bgmRef} loop src="/song_of_kedaya.mp3" />
             </button>
 
             {/*音效*/}
