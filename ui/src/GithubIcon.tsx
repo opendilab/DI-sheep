@@ -3,11 +3,11 @@ import React, { FC } from 'react';
 export const GithubIcon: FC = () => {
     return (
         <a
-            href="https://github.com/StreakingMan/solvable-sheep-game"
+            href="https://github.com/orgs/opendilab/repositories"
             target="_blank"
             rel="noreferrer"
         >
-            点个✨不迷路 @StreakingMan
+            点个✨不迷路 @OpenDILab
             <svg
                 height="24"
                 aria-hidden="true"

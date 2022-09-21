@@ -12,13 +12,10 @@ import { randomString, waitTimeout } from './utils';
 import { defaultTheme } from './themes/default';
 import { Icon, Theme } from './themes/interface';
 import { fishermanTheme } from './themes/fisherman';
-import { jinlunTheme } from './themes/jinlun';
 
-// 主题
-const themes = [defaultTheme, fishermanTheme, jinlunTheme];
+const themes = [defaultTheme, fishermanTheme];
 
-// 最大关卡
-const maxLevel = 50;
+const maxLevel = 10;
 
 interface MySymbol {
     id: string;
@@ -28,91 +25,40 @@ interface MySymbol {
     y: number;
     icon: Icon;
 }
+interface PythonSymbol {
+    uid: string;
+    accessible: boolean;
+    visible: boolean;
+    x: number;
+    y: number;
+    icon: number;
+}
 
 type Scene = MySymbol[];
 
-// 8*8网格  4*4->8*8
-const makeScene: (level: number, icons: Icon[]) => Scene = (level, icons) => {
+// 8*8 grid with factor 4 (32x32)
+const makeScene: (level: number, icons: Icon[], new_scene_data: string[]) => Scene = (level, icons, new_scene_data) => {
     const curLevel = Math.min(maxLevel, level);
     const iconPool = icons.slice(0, 2 * curLevel);
-    const offsetPool = [0, 25, -25, 50, -50].slice(0, 1 + curLevel);
 
     const scene: Scene = [];
 
-    const range = [
-        [2, 6],
-        [1, 6],
-        [1, 7],
-        [0, 7],
-        [0, 8],
-    ][Math.min(4, curLevel - 1)];
+    for (const raw_data of new_scene_data) {
+        const data = JSON.parse(raw_data);
 
-    const randomSet = (icon: Icon) => {
-        const offset =
-            offsetPool[Math.floor(offsetPool.length * Math.random())];
-        const row =
-            range[0] + Math.floor((range[1] - range[0]) * Math.random());
-        const column =
-            range[0] + Math.floor((range[1] - range[0]) * Math.random());
         scene.push({
-            isCover: false,
+            isCover: !data.accessible,
+            // isCover: !data.visible,  // for viz debug
             status: 0,
-            icon,
-            id: randomString(4),
-            x: column * 100 + offset,
-            y: row * 100 + offset,
+            icon: iconPool[data.icon],
+            id: data.uid,
+            x: data.x,
+            y: data.y,
         });
-    };
-
-    // 大于5级别增加icon池
-    let compareLevel = curLevel;
-    while (compareLevel > 0) {
-        iconPool.push(
-            ...iconPool.slice(0, Math.min(10, 2 * (compareLevel - 5)))
-        );
-        compareLevel -= 5;
     }
-
-    for (const icon of iconPool) {
-        for (let i = 0; i < 6; i++) {
-            randomSet(icon);
-        }
-    }
-
     return scene;
 };
 
-// 洗牌
-const washScene: (level: number, scene: Scene) => Scene = (level, scene) => {
-    const updateScene = scene.slice().sort(() => Math.random() - 0.5);
-    const offsetPool = [0, 25, -25, 50, -50].slice(0, 1 + level);
-    const range = [
-        [2, 6],
-        [1, 6],
-        [1, 7],
-        [0, 7],
-        [0, 8],
-    ][Math.min(4, level - 1)];
-
-    const randomSet = (symbol: MySymbol) => {
-        const offset =
-            offsetPool[Math.floor(offsetPool.length * Math.random())];
-        const row =
-            range[0] + Math.floor((range[1] - range[0]) * Math.random());
-        const column =
-            range[0] + Math.floor((range[1] - range[0]) * Math.random());
-        symbol.x = column * 100 + offset;
-        symbol.y = row * 100 + offset;
-        symbol.isCover = false;
-    };
-
-    for (const symbol of updateScene) {
-        if (symbol.status !== 0) continue;
-        randomSet(symbol);
-    }
-
-    return updateScene;
-};
 
 interface SymbolProps extends MySymbol {
     onClick: MouseEventHandler;
@@ -145,7 +91,6 @@ const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, status, onClick }) => {
 
 const App: FC = () => {
     const [curTheme, setCurTheme] = useState<Theme<any>>(defaultTheme);
-    const [scene, setScene] = useState<Scene>(makeScene(1, curTheme.icons));
     const [level, setLevel] = useState<number>(1);
     const [queue, setQueue] = useState<MySymbol[]>([]);
     const [sortedQueue, setSortedQueue] = useState<
@@ -154,11 +99,11 @@ const App: FC = () => {
     const [finished, setFinished] = useState<boolean>(false);
     const [tipText, setTipText] = useState<string>('');
     const [animating, setAnimating] = useState<boolean>(false);
+    const [scene, setScene] = useState<Scene>(makeScene(level, curTheme.icons, []));  // placeholder
 
-    // 音效
+    // audio
     const soundRefMap = useRef<Record<string, HTMLAudioElement>>({});
 
-    // 第一次点击时播放bgm
     const bgmRef = useRef<HTMLAudioElement>(null);
     const [bgmOn, setBgmOn] = useState<boolean>(false);
     const [once, setOnce] = useState<boolean>(false);
@@ -172,12 +117,12 @@ const App: FC = () => {
         }
     }, [bgmOn]);
 
-    // 主题切换
+    // change themes
     useEffect(() => {
-        restart();
+        restart(level);
     }, [curTheme]);
 
-    // 队列区排序
+    // sort queue
     useEffect(() => {
         const cache: Record<string, MySymbol[]> = {};
         for (const symbol of queue) {
@@ -200,41 +145,19 @@ const App: FC = () => {
         setSortedQueue(updateSortedQueue);
     }, [queue]);
 
-    // 初始化覆盖状态
-    useEffect(() => {
-        checkCover(scene);
-    }, []);
-
-    // 向后检查覆盖
-    const checkCover = (scene: Scene) => {
-        const updateScene = scene.slice();
-        for (let i = 0; i < updateScene.length; i++) {
-            // 当前item对角坐标
-            const cur = updateScene[i];
-            cur.isCover = false;
-            if (cur.status !== 0) continue;
-            const { x: x1, y: y1 } = cur;
-            const x2 = x1 + 100,
-                y2 = y1 + 100;
-
-            for (let j = i + 1; j < updateScene.length; j++) {
-                const compare = updateScene[j];
-                if (compare.status !== 0) continue;
-
-                // 两区域有交集视为选中
-                // 两区域不重叠情况取反即为交集
-                const { x, y } = compare;
-
-                if (!(y + 100 <= y1 || y >= y2 || x + 100 <= x1 || x >= x2)) {
-                    cur.isCover = true;
-                    break;
+    const update = (new_scene_data: string[]) => {
+        for (const raw_data of new_scene_data) {
+            const data = JSON.parse(raw_data);
+            const find = scene.find((s) => s.id === data.uid);
+            if (find) {
+                if (find.status === 0) {
+                    find.isCover = !data.accessible;
                 }
             }
         }
-        setScene(updateScene);
     };
 
-    // 弹出
+    // TODO
     const pop = () => {
         if (!queue.length) return;
         const updateQueue = queue.slice();
@@ -246,30 +169,9 @@ const App: FC = () => {
             find.status = 0;
             find.x = 100 * Math.floor(8 * Math.random());
             find.y = 700;
-            checkCover(scene);
         }
     };
 
-    // 撤销
-    const undo = () => {
-        if (!queue.length) return;
-        const updateQueue = queue.slice();
-        const symbol = updateQueue.pop();
-        if (!symbol) return;
-        const find = scene.find((s) => s.id === symbol.id);
-        if (find) {
-            setQueue(updateQueue);
-            find.status = 0;
-            checkCover(scene);
-        }
-    };
-
-    // 洗牌
-    const wash = () => {
-        checkCover(washScene(level, scene));
-    };
-
-    // 加大难度
     const levelUp = () => {
         if (level >= maxLevel) {
             return;
@@ -277,62 +179,41 @@ const App: FC = () => {
         setFinished(false);
         setLevel(level + 1);
         setQueue([]);
-        checkCover(makeScene(level + 1, curTheme.icons));
-    fetch('http://127.0.0.1:5000/DI-sheep/', 
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: 'POST',
-        body: JSON.stringify({command: 'reset', argument: level})
-      })
-      .then(response => response.json())
-      .then(response => {
-        console.log(response.result);
-    });
+        fetch('http://127.0.0.1:5000/DI-sheep/',
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            method: 'POST',
+            body: JSON.stringify({command: 'reset', argument: level + 1})
+          })
+          .then(response => response.json())
+          .then(response => {
+            setScene(makeScene(level + 1, curTheme.icons, response.result.scene));
+        });
     };
 
-    // 重开
-    const restart = () => {
+    const restart = (level: number) => {
         setFinished(false);
-        setLevel(1);
         setQueue([]);
-        checkCover(makeScene(1, curTheme.icons));
-    fetch('http://127.0.0.1:5000/DI-sheep/', 
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: 'POST',
-        body: JSON.stringify({command: 'reset', argument: level})
-      })
-      .then(response => response.json())
-      .then(response => {
-        console.log(response.result);
-    });
+        fetch('http://127.0.0.1:5000/DI-sheep/',
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            method: 'POST',
+            body: JSON.stringify({command: 'reset', argument: level})
+          })
+          .then(response => response.json())
+          .then(response => {
+            setScene(makeScene(level, curTheme.icons, response.result.scene));
+        });
     };
 
-    // 点击item
     const clickSymbol = async (idx: number) => {
         if (finished || animating) return;
-
-
-      fetch('http://127.0.0.1:5000/DI-sheep/', 
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: 'POST',
-        body: JSON.stringify({command: 'step', argument: idx})
-      })
-      .then(response => response.json())
-      .then(response => {
-        console.log(response.result);
-      });
-
 
         if (!once) {
             setBgmOn(true);
@@ -344,32 +225,41 @@ const App: FC = () => {
         if (symbol.isCover || symbol.status !== 0) return;
         symbol.status = 1;
 
-        // 点击音效
         if (soundRefMap.current) {
-            console.log(soundRefMap.current, symbol.icon);
             soundRefMap.current[symbol.icon.clickSound].currentTime = 0;
             soundRefMap.current[symbol.icon.clickSound].play();
         }
+
+        fetch('http://127.0.0.1:5000/DI-sheep/',
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            method: 'POST',
+            body: JSON.stringify({command: 'step', argument: idx})
+          })
+          .then(response => response.json())
+          .then(response => {
+            update(response.result.scene);
+        });
 
         let updateQueue = queue.slice();
         updateQueue.push(symbol);
 
         setQueue(updateQueue);
-        checkCover(updateScene);
 
         setAnimating(true);
         await waitTimeout(150);
 
         const filterSame = updateQueue.filter((sb) => sb.icon === symbol.icon);
 
-        // 三连了
         if (filterSame.length === 3) {
             updateQueue = updateQueue.filter((sb) => sb.icon !== symbol.icon);
             for (const sb of filterSame) {
                 const find = updateScene.find((i) => i.id === sb.id);
                 if (find) {
                     find.status = 2;
-                    // 三连音效
                     if (soundRefMap.current) {
                         soundRefMap.current[
                             symbol.icon.tripleSound
@@ -380,26 +270,22 @@ const App: FC = () => {
             }
         }
 
-        // 输了
         if (updateQueue.length === 7) {
-            setTipText('失败了');
+            setTipText('挑战失败');
             setFinished(true);
         }
 
         if (!updateScene.find((s) => s.status !== 2)) {
-            // 胜利
             if (level === maxLevel) {
-                setTipText('完成挑战');
+                setTipText('挑战成功');
                 setFinished(true);
                 return;
             }
-            // 升级
             setLevel(level + 1);
             setQueue([]);
-            checkCover(makeScene(level + 1, curTheme.icons));
+            restart(level + 1);
         } else {
             setQueue(updateQueue);
-            checkCover(updateScene);
         }
 
         setAnimating(false);
@@ -407,7 +293,7 @@ const App: FC = () => {
 
     return (
         <>
-            <h2>有解的羊了个羊(DEMO)</h2>
+            <h2>DI-sheep: 深度强化学习 + 羊了个羊 v0.1</h2>
             <h6>
                 <GithubIcon />
             </h6>
@@ -450,13 +336,7 @@ const App: FC = () => {
             </div>
             <div className="queue-container flex-container flex-center" />
             <div className="flex-container flex-between">
-                <button className="flex-grow" onClick={pop}>
-                    弹出
-                </button>
-                <button className="flex-grow" onClick={undo}>
-                    撤销
-                </button>
-                <button className="flex-grow" onClick={wash}>
+                <button className="flex-grow" onClick={() => restart(level)}>
                     洗牌
                 </button>
                 <button className="flex-grow" onClick={levelUp}>
@@ -465,16 +345,10 @@ const App: FC = () => {
                 {/*<button onClick={test}>测试</button>*/}
             </div>
 
-            <p>
-                <span id="busuanzi_container_site_pv">
-                    累计访问：<span id="busuanzi_value_site_pv"></span>次
-                </span>
-            </p>
-
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    <button onClick={restart}>再来一次</button>
+                    <button onClick={() => restart(level)}>再来一次</button>
                 </div>
             )}
 
