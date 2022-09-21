@@ -95,6 +95,7 @@ class SheepEnv(gym.Env):
             item1 = self.scene[i]
             if item1 is None:
                 continue
+            item1.accessible = 1
             for j in range(i + 1, self.total_item_num):
                 item2 = self.scene[j]
                 if item2 is None:
