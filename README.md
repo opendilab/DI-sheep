@@ -2,7 +2,9 @@
 
 当 AI 技术的明珠——深度强化学习，遇到号称“通关率只有0.01%”的游戏“羊了个羊”，会碰撞出哪些奇思妙想呢？
 
-![qrcode.png](ui/public/demo.png)
+<div align="center">
+    <a href="https://github.com/opendilab/DI-sheep"><img width="500px" height="auto" src="https://github.com/opendilab/DI-sheep/blob/master/ui/public/demo.png"></a>
+</div>
 
 # 使用指南
 
