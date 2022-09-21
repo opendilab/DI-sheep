@@ -16,12 +16,13 @@
     ```shell
     # 预先安装好 Python3
     cd service
-    pip install -r requirements.txt
+    pip install -r requirement.txt
     FLASK_APP=app.py flask run
     ```
   - 客户端（react）
     ```shell
     # 预先安装好 node.js 和 react
+    cd ui
     npm run build
     npm run preview
     ```
@@ -30,7 +31,7 @@
     ```shell
     # 预先安装好 Python3
     cd service
-    pip install -r requirements-train.txt
+    pip install -r requirement-train.txt
     python3 -u sheep_ppo_main.py
     ```
 - 如果想使用定义好的 gym 羊了个羊环境 --> 点个 star 之后直接暴力 CTRL C+V 拿走 `service/sheep_env.py` 尽情魔改
