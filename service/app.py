@@ -9,6 +9,7 @@ app = Api(
     title="DI-sheep App",
     description="Play Sheep with Deep Reinforcement Learning, Powered by OpenDILab"
 )
+
 name_space = app.namespace('DI-sheep', description='DI-sheep APIs')
 model = app.model(
     'DI-sheep params', {
@@ -35,19 +36,41 @@ class MainClass(Resource):
             data = request.json
             cmd, arg = data['command'], data['argument']
             if cmd == 'reset':
-                obs = env.reset(arg)
-                done = False
+                env.reset(arg)
+                scene = [item.to_json() for item in env.scene if item is not None]
+                response = jsonify({
+                    "statusCode": 200,
+                    "status": "Execution action",
+                    "result": {
+                        "scene": scene,
+                    }
+                })
             elif cmd == 'step':
-                obs, _, done, _ = env.step(arg)
+                _, _, done, _ = env.step(arg)
+                scene = [item.to_json() for item in env.scene if item is not None]
+                bucket = [item.to_json() for item in env.bucket]
+                response = jsonify(
+                    {
+                        "statusCode": 200,
+                        "status": "Execution action",
+                        "result": {
+                            "scene": scene,
+                            "bucket": bucket,
+                            "done": done,
+                        }
+                    }
+                )
             else:
                 return jsonify({
                     "statusCode": 500,
                     "status": "Invalid command: {}".format(cmd),
                 })
-            response = jsonify({"statusCode": 200, "status": "Execution action", "result": {"obs": obs, "done": done}})
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response
-        except Exception:
+        except Exception as e:
+            import traceback
+            print(repr(e))
+            print(traceback.format_exc())
             return jsonify({
                 "statusCode": 500,
                 "status": "Could not execute action",

@@ -1,6 +1,6 @@
 # DI-sheep：深度强化学习 + 羊了个羊
 
-当人工智能技术的明珠——深度强化学习，遇到号称“通关率只有0.01%”的坑爹游戏“羊了个羊”，会碰撞出哪些奇思妙想呢？
+当人工智能技术的明珠——深度强化学习，遇到号称“通关率只有0.01%”的游戏“羊了个羊”，会碰撞出哪些奇思妙想呢？
 
 # 使用指南
 
@@ -26,7 +26,7 @@
     ```shell
     # 预先安装好 Python3
     cd service
-    pip install -r requirements.txt
+    pip install -r requirements-train.txt
     python3 -u sheep_ppo_main.py
     ```
 - 如果想使用定义好的 gym 羊了个羊环境 --> 点个 star 之后直接暴力 CTRL C+V 拿走 `service/sheep_env.py` 尽情魔改
@@ -53,6 +53,7 @@
 
 ## 算法
 
+- [ ] 强化学习训练参数调整和算法微调
 - [ ] 详细的神经网络和强化学习算法设计文档
 - [ ] model-based RL 和 planning 算法
 - [ ] 神经网络压缩（用于部署） 
