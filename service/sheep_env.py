@@ -2,6 +2,7 @@ from typing import Tuple, Optional, Dict
 from collections import deque
 import copy
 import gym
+import json
 import uuid
 import numpy as np
 
@@ -13,7 +14,7 @@ class Item:
         self.offset = offset
         self.row = row
         self.column = column
-        self.uid = uuid.uuid4()
+        self.uid = str(uuid.uuid4())
         self.x = column * 100 + offset
         self.y = row * 100 + offset
         self.grid_x = self.x % 25
@@ -23,6 +24,9 @@ class Item:
 
     def __repr__(self) -> str:
         return 'icon({})'.format(self.icon)
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=2)
 
 
 class SheepEnv(gym.Env):
@@ -44,7 +48,7 @@ class SheepEnv(gym.Env):
     def _make_game(self) -> None:
         # TODO wash scene
         self.icon_pool = self.icons[:2 * self.level]
-        self.offset_pool = [0, 25, -25, 50, -50][:1 + self.level]
+        self.offset_pool = [0, 25, 50, 75][:1 + self.level]
         self.range = [
             [2, 6],
             [1, 6],
@@ -64,19 +68,20 @@ class SheepEnv(gym.Env):
         self.scene = []
         self.bucket = deque(maxlen=self.bucket_length)
 
+        N = self.range[1] - self.range[0] - 1
         for i in range(len(self.icon_pool)):
             for j in range(self.item_per_icon):
+                row = self.range[0] + np.int(N * np.random.random())
+                column = self.range[0] + np.int(N * np.random.random())
                 offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
-                row = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
-                column = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
                 item = Item(self.icon_pool[i], offset, row, column)
                 self.scene.append(item)
         if self.item_non_div > 0:
             for icon in np.random.choice(self.icon_pool, size=self.item_non_div, replace=False):
+                row = self.range[0] + np.int(N * np.random.random())
+                column = self.range[0] + np.int(N * np.random.random())
                 offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
-                row = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
-                column = self.range[0] + np.int((self.range[1] - self.range[0]) * np.random.random())
-                item = Item(icon, offset, row, column)
+                item = Item(int(icon), offset, row, column)
                 self.scene.append(item)
 
         self.cur_item_num = len(self.scene)
@@ -95,15 +100,25 @@ class SheepEnv(gym.Env):
                 if item2 is None:
                     continue
                 if not (item2.x + 100 <= item1.x or item2.x >= item1.x + 100 or item2.y + 100 <= item1.y
-                        or item2.x >= item1.x + 100):
+                        or item2.y >= item1.y + 100):
                     item1.accessible = 0
                     covered_items.append(item2)
             if len(covered_items) > 0:
-                xs = [item.x - item1.x + 100 * int(item1.x < item.x) for item in covered_items]
-                flag_x = 0 in xs or len(xs) > len(set(xs))  # repeat xs
-                ys = [item.y - item1.y + 100 * int(item1.y < item.y) for item in covered_items]
-                flag_y = 0 in ys or len(ys) > len(set(ys))  # repeat ys
-                item1.visible = int(flag_x and flag_y)
+                flag = np.zeros((2, 2)).astype(np.int64)  # core offset 50x50 is visible
+                core_x, core_y = item1.x + 25, item1.y + 25
+                for item in covered_items:
+                    min_x = max(core_x, item.x)
+                    max_x = min(core_x + 50, item.x + 100)
+                    min_y = max(core_y, item.y)
+                    max_y = min(core_y + 50, item.y + 100)
+                    if min_x < max_x or min_y < max_y:
+                        # top left: (max_x, max_y)
+                        # bottom right: (min_x, min_y)
+                        flag[(min_x - core_x) // 25:(max_x - core_x) // 25,
+                             (min_y - core_y) // 25:(max_y - core_y) // 25] = 1
+                        if flag.sum() == 4:
+                            break
+                item1.visible = int(flag.sum() < 4)
             else:
                 item1.visible = 1
 

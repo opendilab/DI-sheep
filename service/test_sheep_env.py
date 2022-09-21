@@ -8,6 +8,7 @@ def test_naive():
     env = SheepEnv(level=10)
     obs = env.reset()
     print(env.observation_space)
+    assert isinstance(env.scene[0].to_json(), str)
 
     while True:
         action_mask = obs['action_mask']
