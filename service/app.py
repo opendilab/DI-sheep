@@ -1,5 +1,7 @@
+import time
 from flask import Flask, request, jsonify, make_response
 from flask_restplus import Api, Resource, fields
+from threading import Thread
 from sheep_env import SheepEnv
 
 flask_app = Flask(__name__)
@@ -17,7 +19,25 @@ model = app.model(
         'argument': fields.Integer(required=False, description="Argument Field", help="reset->level, step->action"),
     }
 )
-env = SheepEnv(1)
+MAX_ENV_NUM = 50
+ENV_TIMEOUT_SECOND = 60
+envs = {}
+
+
+def env_monitor():
+    while True:
+        cur_time = time.time()
+        pop_keys = []
+        for k, v in envs.items():
+            if cur_time - v['update_time'] >= ENV_TIMEOUT_SECOND:
+                pop_keys.append(k)
+        for k in pop_keys:
+            envs.pop(k)
+        time.sleep(1)
+
+
+app.env_thread = Thread(target=env_monitor, daemon=True)
+app.env_thread.start()
 
 
 @name_space.route("/")
@@ -34,6 +54,20 @@ class MainClass(Resource):
     def post(self):
         try:
             data = request.json
+            ip = request.remote_addr
+
+            if ip not in envs:
+                if len(envs) >= MAX_ENV_NUM:
+                    return jsonify({
+                        "statusCode": 501,
+                        "status": "No enough env resource, please wait a moment",
+                    })
+                else:
+                    env = SheepEnv(1)
+                    envs[ip] = {'env': env, 'update_time': time.time()}
+            else:
+                env = envs[ip]['env']
+                envs[ip]['update_time'] = time.time()
             cmd, arg = data['command'], data['argument']
             if cmd == 'reset':
                 env.reset(arg)
