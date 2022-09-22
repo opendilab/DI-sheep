@@ -338,7 +338,7 @@ const App: FC = () => {
             <div className="queue-container flex-container flex-center" />
             <div className="flex-container flex-between">
                 <button className="flex-grow" onClick={() => restart(level)}>
-                    洗牌
+                    重开本关
                 </button>
                 <button className="flex-grow" onClick={levelUp}>
                     下一关
