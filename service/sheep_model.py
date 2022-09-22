@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from ding.torch_utils import Transformer, MLP
+from ding.torch_utils import Transformer, MLP, unsqueeze, to_tensor
 
 
 class SheepModel(nn.Module):
@@ -56,3 +56,9 @@ class SheepModel(nn.Module):
     def forward(self, x, mode):
         assert mode in self.mode, "not support forward mode: {}/{}".format(mode, self.mode)
         return getattr(self, mode)(x)
+
+    def compute_action(self, x):
+        x = unsqueeze(to_tensor(x))
+        with torch.no_grad():
+            logit = self.compute_actor(x)['logit']
+            return logit.argmax(dim=-1)[0].item()

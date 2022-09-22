@@ -194,9 +194,10 @@ class SheepEnv(gym.Env):
                 if item.visible:
                     item_obs[i][item.icon] = 1
                     item_obs[i][p2 + item.accessible] = 1
-                    action_mask[i] = 1
                 else:
                     item_obs[i][L - 2] = 1
+                if item.accessible:
+                    action_mask[i] = 1
 
         bucket_obs = np.zeros(3 * len(self.icons))
         bucket_icon_stat = [0 for _ in range(len(self.icons))]
