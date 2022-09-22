@@ -53,22 +53,33 @@ class MainClass(Resource):
     @app.expect(model)
     def post(self):
         try:
+            t_start = time.time()
             data = request.json
+            cmd, arg = data['command'], data['argument']
             ip = request.remote_addr
 
             if ip not in envs:
-                if len(envs) >= MAX_ENV_NUM:
-                    return jsonify({
-                        "statusCode": 501,
-                        "status": "No enough env resource, please wait a moment",
-                    })
+                if cmd == 'reset':
+                    if len(envs) >= MAX_ENV_NUM:
+                        response = jsonify({
+                            "statusCode": 501,
+                            "status": "No enough env resource, please wait a moment",
+                        })
+                        response.headers.add('Access-Control-Allow-Origin', '*')
+                        return response
+                    else:
+                        env = SheepEnv(1, agent=True)
+                        envs[ip] = {'env': env, 'update_time': time.time()}
                 else:
-                    env = SheepEnv(1)
-                    envs[ip] = {'env': env, 'update_time': time.time()}
+                    response = jsonify({
+                        "statusCode": 501,
+                        "status": "No response for too long time, please reset the game",
+                    })
+                    response.headers.add('Access-Control-Allow-Origin', '*')
+                    return response
             else:
                 env = envs[ip]['env']
                 envs[ip]['update_time'] = time.time()
-            cmd, arg = data['command'], data['argument']
             if cmd == 'reset':
                 env.reset(arg)
                 scene = [item.to_json() for item in env.scene if item is not None]
@@ -95,17 +106,23 @@ class MainClass(Resource):
                     }
                 )
             else:
-                return jsonify({
+                response = jsonify({
                     "statusCode": 500,
                     "status": "Invalid command: {}".format(cmd),
                 })
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response
+            print('backend process time: {}'.format(time.time() - t_start))
+            print('current env number: {}'.format(len(envs)))
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response
         except Exception as e:
             import traceback
             print(repr(e))
             print(traceback.format_exc())
-            return jsonify({
+            response = jsonify({
                 "statusCode": 500,
                 "status": "Could not execute action",
             })
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response

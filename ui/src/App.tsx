@@ -100,6 +100,7 @@ const App: FC = () => {
     const [finished, setFinished] = useState<boolean>(false);
     const [tipText, setTipText] = useState<string>('');
     const [animating, setAnimating] = useState<boolean>(false);
+    const [expired, setExpired] = useState<boolean>(false);
     const [scene, setScene] = useState<Scene>(makeScene(level, curTheme.icons, []));  // placeholder
 
     // audio
@@ -197,6 +198,7 @@ const App: FC = () => {
 
     const restart = (level: number) => {
         setFinished(false);
+        setExpired(false);
         setQueue([]);
         fetch('http://127.0.0.1:5000/DI-sheep/',
           {
@@ -214,6 +216,7 @@ const App: FC = () => {
     };
 
     const clickSymbol = async (idx: number) => {
+        // console.time("process");
         if (finished || animating) return;
 
         if (!once) {
@@ -242,7 +245,11 @@ const App: FC = () => {
           })
           .then(response => response.json())
           .then(response => {
-            update(response.result.scene);
+            setFinished(response.statusCode === 501)
+            if (response.statusCode != 501) {
+                update(response.result.scene);
+            }
+            setExpired(response.statusCode === 501);
         });
 
         let updateQueue = queue.slice();
@@ -251,7 +258,8 @@ const App: FC = () => {
         setQueue(updateQueue);
 
         setAnimating(true);
-        await waitTimeout(150);
+        // console.timeEnd("process");
+        await waitTimeout(250);
 
         const filterSame = updateQueue.filter((sb) => sb.icon === symbol.icon);
 
@@ -349,7 +357,7 @@ const App: FC = () => {
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    <button onClick={() => restart(level)}>再来一次</button>
+                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一局' : '再来一局'} </button>
                 </div>
             )}
 

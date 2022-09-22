@@ -34,10 +34,11 @@ class SheepEnv(gym.Env):
     icons = [i for i in range(10)]
     R = 10
 
-    def __init__(self, level: int, bucket_length: int = 7) -> None:
+    def __init__(self, level: int, bucket_length: int = 7, agent: bool = True) -> None:
         self.level = level
         assert 1 <= self.level <= self.max_level
         self.bucket_length = bucket_length
+        self.agent = agent
         self._make_game()
         self._set_space()
 
@@ -103,8 +104,10 @@ class SheepEnv(gym.Env):
                 if not (item2.x + 100 <= item1.x or item2.x >= item1.x + 100 or item2.y + 100 <= item1.y
                         or item2.y >= item1.y + 100):
                     item1.accessible = 0
+                    if not self.agent:
+                        break
                     covered_items.append(item2)
-            if len(covered_items) > 0:
+            if self.agent and len(covered_items) > 0:
                 flag = np.zeros((2, 2)).astype(np.int64)  # core offset 50x50 is visible
                 core_x, core_y = item1.x + 25, item1.y + 25
                 for item in covered_items:
