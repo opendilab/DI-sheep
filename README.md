@@ -2,8 +2,10 @@
 
 当 AI 技术的明珠——深度强化学习，遇到号称“通关率只有0.01%”的游戏“羊了个羊”，会碰撞出哪些奇思妙想呢？
 
+路过记得记得点个 star (click ![stars - di-sheep](https://img.shields.io/github/stars/opendilab/di-sheep?style=social) 哦，持续更新ing
+
 <div align="center">
-    <a href="https://github.com/opendilab/DI-sheep"><img width="500px" height="auto" src="https://github.com/opendilab/DI-sheep/blob/master/ui/public/demo.png"></a>
+    <a href="https://github.com/opendilab/DI-sheep"><img width="500px" height="auto" src="https://github.com/opendilab/DI-sheep/blob/master/ui/public/demo.gif"></a>
 </div>
 
 # 使用指南
@@ -70,8 +72,8 @@
 
 
 ## 应用
+- [x] 更多自定义主题和 BGM
 - [ ] 更多 AI 训练时的行为分析
-- [ ] 更多自定义主题和 BGM
 - [ ] 在线网页端部署
 - [ ] 移动端应用（欢迎Android/IOS开发者支持）
 
