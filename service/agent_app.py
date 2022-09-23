@@ -1,8 +1,11 @@
 import time
+import numpy as np
+import torch
 from flask import Flask, request, jsonify, make_response
 from flask_restplus import Api, Resource, fields
 from threading import Thread
 from sheep_env import SheepEnv
+from sheep_model import SheepModel
 
 flask_app = Flask(__name__)
 app = Api(
@@ -22,6 +25,15 @@ model = app.model(
 MAX_ENV_NUM = 50
 ENV_TIMEOUT_SECOND = 60
 envs = {}
+# only level 5-10, because they have the same obs space
+model = SheepModel(80, 30, 19)
+model.load_state_dict(torch.load('ckpt_best.pth.tar', map_location='cpu')['model'])
+
+
+def random_action(obs, env):
+    action_mask = obs['action_mask']
+    action = np.random.choice(len(action_mask), p=action_mask / action_mask.sum())
+    return action
 
 
 def env_monitor():
@@ -70,7 +82,7 @@ class MainClass(Resource):
                         response.headers.add('Access-Control-Allow-Origin', '*')
                         return response
                     else:
-                        env = SheepEnv(1, agent=False)
+                        env = SheepEnv(1, agent=True)
                         envs[ip] = {'env': env, 'update_time': time.time()}
                 else:
                     response = jsonify(
@@ -84,18 +96,26 @@ class MainClass(Resource):
             else:
                 env = envs[ip]['env']
                 envs[ip]['update_time'] = time.time()
+
             if cmd == 'reset':
-                env.reset(arg)
+                obs = env.reset(arg)
+                action = model.compute_action(obs)
+                # action = random_action(obs, env)
                 scene = [item.to_json() for item in env.scene if item is not None]
-                response = jsonify({
-                    "statusCode": 200,
-                    "status": "Execution action",
-                    "result": {
-                        "scene": scene,
+                response = jsonify(
+                    {
+                        "statusCode": 200,
+                        "status": "Execution action",
+                        "result": {
+                            "scene": scene,
+                            "action": action,
+                        }
                     }
-                })
+                )
             elif cmd == 'step':
-                _, _, done, _ = env.step(arg)
+                obs, _, done, _ = env.step(arg)
+                action = model.compute_action(obs)
+                # action = random_action(obs, env)
                 scene = [item.to_json() for item in env.scene if item is not None]
                 bucket = [item.to_json() for item in env.bucket]
                 response = jsonify(
@@ -106,6 +126,7 @@ class MainClass(Resource):
                             "scene": scene,
                             "bucket": bucket,
                             "done": done,
+                            "action": action,
                         }
                     }
                 )

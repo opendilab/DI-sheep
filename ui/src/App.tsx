@@ -17,28 +17,22 @@ import { diTheme } from './themes/di';
 const themes = [defaultTheme, fishermanTheme, diTheme];
 
 const maxLevel = 10;
+const uid = randomString(4);
 
 interface MySymbol {
     id: string;
     status: number; // 0->1->2
     isCover: boolean;
+    isAgentTarget: boolean;
     x: number;
     y: number;
     icon: Icon;
-}
-interface PythonSymbol {
-    uid: string;
-    accessible: boolean;
-    visible: boolean;
-    x: number;
-    y: number;
-    icon: number;
 }
 
 type Scene = MySymbol[];
 
 // 8*8 grid with factor 4 (32x32)
-const makeScene: (level: number, icons: Icon[], new_scene_data: string[]) => Scene = (level, icons, new_scene_data) => {
+const makeScene: (level: number, icons: Icon[], new_scene_data: string[], agent_action: number) => Scene = (level, icons, new_scene_data, agent_action) => {
     const curLevel = Math.min(maxLevel, level);
     const iconPool = icons.slice(0, 2 * curLevel);
 
@@ -47,9 +41,11 @@ const makeScene: (level: number, icons: Icon[], new_scene_data: string[]) => Sce
     for (const raw_data of new_scene_data) {
         const data = JSON.parse(raw_data);
 
+        const count = scene.length;
         scene.push({
             isCover: !data.accessible,
             // isCover: !data.visible,  // for viz debug
+            isAgentTarget: count === agent_action,
             status: 0,
             icon: iconPool[data.icon],
             id: data.uid,
@@ -65,13 +61,13 @@ interface SymbolProps extends MySymbol {
     onClick: MouseEventHandler;
 }
 
-const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, status, onClick }) => {
+const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, isAgentTarget, status, onClick }) => {
     return (
         <div
             className="symbol"
             style={{
                 transform: `translateX(${x}%) translateY(${y}%)`,
-                backgroundColor: isCover ? '#999' : 'white',
+                backgroundColor: isAgentTarget ? 'orange' : isCover ? '#999' : 'white',
                 opacity: status < 2 ? 1 : 0,
             }}
             onClick={onClick}
@@ -101,7 +97,8 @@ const App: FC = () => {
     const [tipText, setTipText] = useState<string>('');
     const [animating, setAnimating] = useState<boolean>(false);
     const [expired, setExpired] = useState<boolean>(false);
-    const [scene, setScene] = useState<Scene>(makeScene(level, curTheme.icons, []));  // placeholder
+    const [lastAgentTarget, setLastAgentTarget] = useState<number>(-1);
+    const [scene, setScene] = useState<Scene>(makeScene(level, curTheme.icons, [], -1));  // placeholder
 
     // audio
     const soundRefMap = useRef<Record<string, HTMLAudioElement>>({});
@@ -157,6 +154,9 @@ const App: FC = () => {
                 }
             }
         }
+        if (scene.length > 0) {
+            scene.slice()[lastAgentTarget].isAgentTarget = false;
+        }
     };
 
     // TODO
@@ -188,11 +188,12 @@ const App: FC = () => {
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'reset', argument: level + 1})
+            body: JSON.stringify({command: 'reset', argument: level + 1, uid: uid})
           })
           .then(response => response.json())
           .then(response => {
-            setScene(makeScene(level + 1, curTheme.icons, response.result.scene));
+            setScene(makeScene(level + 1, curTheme.icons, response.result.scene, response.result.action));
+            setLastAgentTarget(response.result.action);
         });
     };
 
@@ -207,16 +208,20 @@ const App: FC = () => {
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'reset', argument: level})
+            body: JSON.stringify({command: 'reset', argument: level, uid: uid})
           })
           .then(response => response.json())
           .then(response => {
-            setScene(makeScene(level, curTheme.icons, response.result.scene));
+            setScene(makeScene(level, curTheme.icons, response.result.scene, response.result.action));
+            setLastAgentTarget(response.result.action);
         });
     };
 
     const clickSymbol = async (idx: number) => {
         // console.time("process");
+        if (idx === -1) {
+            idx = lastAgentTarget;
+        }
         if (finished || animating) return;
 
         if (!once) {
@@ -241,13 +246,15 @@ const App: FC = () => {
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'step', argument: idx})
+            body: JSON.stringify({command: 'step', argument: idx, uid: uid})
           })
           .then(response => response.json())
           .then(response => {
             setFinished(response.statusCode === 501)
             if (response.statusCode != 501) {
                 update(response.result.scene);
+                setLastAgentTarget(response.result.action);
+                updateScene[response.result.action].isAgentTarget = true;
             }
             setExpired(response.statusCode === 501);
         });
@@ -351,8 +358,14 @@ const App: FC = () => {
                 <button className="flex-grow" onClick={levelUp}>
                     下一关
                 </button>
+                <button className="flex-grow" onClick={() => clickSymbol(-1)}>
+                    AI 速通流
+                </button>
                 {/*<button onClick={test}>测试</button>*/}
             </div>
+            <p style={{ textAlign: 'center' }}>
+                小提示：如果出现橙色背景块，这是 AI 提示的选择哦
+            </p>
 
             {finished && (
                 <div className="modal">

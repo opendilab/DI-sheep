@@ -19,7 +19,8 @@ P.S. 路过记得点个 star ![stars - di-sheep](https://img.shields.io/github/s
     # 预先安装好 Python3
     cd service
     pip install -r requirement.txt
-    FLASK_APP=app.py flask run
+    FLASK_APP=app.py flask run  # 玩家试玩
+    # FLASK_APP=agent_app.py flask run  # 玩家 + AI 试玩
     ```
   - 客户端（react）
     ```shell
@@ -47,7 +48,8 @@ P.S. 路过记得点个 star ![stars - di-sheep](https://img.shields.io/github/s
 ├── LICENSE
 ├── ui                       --> react 网页前端
 └── service                  --> Python 核心模块（算法和服务端）
-    ├── app.py                  --> flask 服务 app
+    ├── app.py                  --> flask 服务 app (仅人类操作)
+    ├── agent_app.py                  --> flask 服务 app（人类+AI操作）
     ├── requirement.txt         --> Python 依赖库列表
     ├── sheep_env.py            --> gym 格式环境
     ├── sheep_model.py          --> 基于 PyTorch 的 Actor-Critic 神经网络模型
@@ -61,6 +63,7 @@ P.S. 路过记得点个 star ![stars - di-sheep](https://img.shields.io/github/s
 ## 算法
 
 - [ ] 强化学习训练参数调整和算法微调
+- [ ] 提供可供本地试玩的模型权重
 - [ ] 详细的神经网络和强化学习算法设计文档
 - [ ] model-based RL 和 planning 算法
 - [ ] 神经网络压缩（用于部署） 
