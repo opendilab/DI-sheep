@@ -2,7 +2,7 @@
 
 当 AI 技术的明珠——深度强化学习，遇到号称“通关率只有0.01%”的游戏“羊了个羊”，会碰撞出哪些奇思妙想呢？
 
-路过记得记得点个 star (click ![stars - di-sheep](https://img.shields.io/github/stars/opendilab/di-sheep?style=social) 哦，持续更新ing
+P.S. 路过记得点个 star ![stars - di-sheep](https://img.shields.io/github/stars/opendilab/di-sheep?style=social) ，持续更新ing
 
 <div align="center">
     <a href="https://github.com/opendilab/DI-sheep"><img width="500px" height="auto" src="https://github.com/opendilab/DI-sheep/blob/master/ui/public/demo.gif"></a>
@@ -69,6 +69,7 @@
 - [ ] 添加原类型游戏（比如3tiles）中的各种道具
 - [ ] 牌的层数问题如何定义
 - [ ] 结合 JAX 优化环境运行速度
+- [ ] 更多结合 AI 的玩法设计
 
 
 ## 应用
