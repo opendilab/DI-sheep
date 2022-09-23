@@ -15,7 +15,7 @@ const dis = Object.entries(imagesUrls).map(([key, value]) => ({
 }));
 
 export const diTheme: Theme<DefaultSoundNames> = {
-    name: 'di',
+    name: '喵了个喵',
     icons: dis.map(({ name, content }) => ({
         name,
         content,
