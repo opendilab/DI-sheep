@@ -10,6 +10,9 @@ P.S. 路过记得点个 star ![stars - di-sheep](https://img.shields.io/github/s
 
 # 使用指南
 
+## 算法原理解析
+![disheep drawio](https://user-images.githubusercontent.com/33195032/191955286-7c309e9d-6e35-491f-93b3-b14cd1fe033f.png)
+
 ## 快速上手
 
 - 如果想**在线试玩** --> [在线网页（施工中）](https://github.com/PaParaZz1/DI-sheep)
@@ -55,6 +58,8 @@ P.S. 路过记得点个 star ![stars - di-sheep](https://img.shields.io/github/s
     ├── test_sheep_env.py       --> gym 格式环境的单元测试
     └── test_sheep_model.py     --> 神经网络模型的单元测试
 ```
+
+
 
 # 更新计划
 
