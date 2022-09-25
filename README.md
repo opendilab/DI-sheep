@@ -8,6 +8,10 @@ P.S. 路过记得点个 star ![stars - di-sheep](https://img.shields.io/github/s
     <a href="https://github.com/opendilab/DI-sheep"><img width="500px" height="auto" src="https://github.com/opendilab/DI-sheep/blob/master/ui/public/demo.gif"></a>
 </div>
 
+# News
+- [bilibili] [羊群加不进去？那就来加猫群叭！深度强化学习版的羊了个羊来了](https://www.bilibili.com/video/BV1N24y1o7Lw/?spm_id_from=333.999.0.0)
+- [WeChat] [万事开头难？喵小DI玩“羊了个羊”可不难](https://mp.weixin.qq.com/s/4Z3WtkcWRp6x4x60RVELfQ)
+
 # 使用指南
 
 ## 算法原理解析
