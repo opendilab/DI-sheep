@@ -203,7 +203,7 @@ const App: FC = () => {
         setFinished(false);
         setLevel(level + 1);
         setQueue([]);
-        fetch('http://127.0.0.1:5000/DI-sheep/',
+        fetch('https://opendilab.net/DI-sheep',
           {
             headers: {
               'Accept': 'application/json',
@@ -226,7 +226,7 @@ const App: FC = () => {
         setFinished(false);
         setExpired(false);
         setQueue([]);
-        fetch('http://127.0.0.1:5000/DI-sheep/',
+        fetch('https://opendilab.net/DI-sheep',
           {
             headers: {
               'Accept': 'application/json',
@@ -265,7 +265,7 @@ const App: FC = () => {
             soundRefMap.current[symbol.icon.clickSound].play();
         }
 
-        fetch('http://127.0.0.1:5000/DI-sheep/',
+        fetch('https://opendilab.net/DI-sheep',
           {
             headers: {
               'Accept': 'application/json',
