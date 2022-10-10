@@ -7,7 +7,7 @@ export const GithubIcon: FC = () => {
             target="_blank"
             rel="noreferrer"
         >
-            点个✨不迷路 @OpenDILab
+            点个 Star 不迷路 @OpenDILab
             <svg
                 height="24"
                 aria-hidden="true"
