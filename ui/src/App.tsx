@@ -13,8 +13,10 @@ import { defaultTheme } from './themes/default';
 import { Icon, Theme } from './themes/interface';
 import { fishermanTheme } from './themes/fisherman';
 import { diTheme } from './themes/di';
+import { mhlTheme } from './themes/mhl';
+import { yhdTheme } from './themes/yhd';
 
-const themes = [defaultTheme, fishermanTheme, diTheme];
+const themes = [defaultTheme, fishermanTheme, diTheme, mhlTheme, yhdTheme];
 
 const maxLevel = 10;
 
