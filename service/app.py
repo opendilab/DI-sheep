@@ -55,8 +55,9 @@ class MainClass(Resource):
         try:
             t_start = time.time()
             data = request.json
-            cmd, arg = data['command'], data['argument']
+            cmd, arg, uid = data['command'], data['argument'], data['uid']
             ip = request.remote_addr
+            ip = str(ip) + str(uid)
 
             if ip not in envs:
                 if cmd == 'reset':
@@ -68,7 +69,7 @@ class MainClass(Resource):
                         response.headers.add('Access-Control-Allow-Origin', '*')
                         return response
                     else:
-                        env = SheepEnv(1, agent=True)
+                        env = SheepEnv(1, agent=False)
                         envs[ip] = {'env': env, 'update_time': time.time()}
                 else:
                     response = jsonify({

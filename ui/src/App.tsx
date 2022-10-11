@@ -19,6 +19,8 @@ import { yhdTheme } from './themes/yhd';
 const themes = [defaultTheme, fishermanTheme, diTheme, mhlTheme, yhdTheme];
 
 const maxLevel = 10;
+const target_url = 'http://127.0.0.1:5000/DI-sheep/';
+// const target_url = 'https://opendilab.net/DI-sheep';
 
 interface MySymbol {
     id: string;
@@ -92,6 +94,7 @@ const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, status, onClick }) => {
     );
 };
 
+const uidApp = 'uid' + crypto.randomUUID();
 const App: FC = () => {
     const [curTheme, setCurTheme] = useState<Theme<any>>(diTheme);
     const [level, setLevel] = useState<number>(1);
@@ -203,14 +206,14 @@ const App: FC = () => {
         setFinished(false);
         setLevel(level + 1);
         setQueue([]);
-        fetch('https://opendilab.net/DI-sheep',
+        fetch(target_url,
           {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'reset', argument: level + 1})
+            body: JSON.stringify({command: 'reset', argument: level + 1, uid: uidApp})
           })
           .then(response => response.json())
           .then(response => {
@@ -226,14 +229,14 @@ const App: FC = () => {
         setFinished(false);
         setExpired(false);
         setQueue([]);
-        fetch('https://opendilab.net/DI-sheep',
+        fetch(target_url,
           {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'reset', argument: level})
+            body: JSON.stringify({command: 'reset', argument: level, uid: uidApp})
           })
           .then(response => response.json())
           .then(response => {
@@ -265,14 +268,14 @@ const App: FC = () => {
             soundRefMap.current[symbol.icon.clickSound].play();
         }
 
-        fetch('https://opendilab.net/DI-sheep',
+        fetch(target_url,
           {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'step', argument: idx})
+            body: JSON.stringify({command: 'step', argument: idx, uid: uidApp})
           })
           .then(response => response.json())
           .then(response => {
@@ -291,7 +294,7 @@ const App: FC = () => {
 
         setAnimating(true);
         // console.timeEnd("process");
-        await waitTimeout(250);
+        await waitTimeout(150);
 
         const filterSame = updateQueue.filter((sb) => sb.icon === symbol.icon);
 
@@ -334,7 +337,7 @@ const App: FC = () => {
 
     return (
         <>
-            <h2>DI-sheep: 深度强化学习 + 羊了个羊 v0.1</h2>
+            <h2>DI-sheep: 深度强化学习 + 羊了个羊 </h2>
             <h6>
                 <GithubIcon />
             </h6>
@@ -351,10 +354,9 @@ const App: FC = () => {
                         </option>
                     ))}
                 </select>
-                关卡: {level}/{maxLevel}
-                <br />
-                用时: {(usedTime / 1000).toFixed(2)}秒
-                <br />
+            </h3>
+            <h3 className="flex-container flex-center">
+                关卡: {level}/{maxLevel}    用时: {(usedTime / 1000).toFixed(2)}秒    
                 总牌数: {maxItemNum}   剩余牌数: {resItemNum}
             </h3>
 
