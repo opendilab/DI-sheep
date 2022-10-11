@@ -13,8 +13,10 @@ import { defaultTheme } from './themes/default';
 import { Icon, Theme } from './themes/interface';
 import { fishermanTheme } from './themes/fisherman';
 import { diTheme } from './themes/di';
+import { mhlTheme } from './themes/mhl';
+import { yhdTheme } from './themes/yhd';
 
-const themes = [defaultTheme, fishermanTheme, diTheme];
+const themes = [defaultTheme, fishermanTheme, diTheme, mhlTheme, yhdTheme];
 
 const maxLevel = 10;
 const uid = randomString(4);
@@ -89,6 +91,14 @@ const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, isAgentTarget, status, o
 const App: FC = () => {
     const [curTheme, setCurTheme] = useState<Theme<any>>(diTheme);
     const [level, setLevel] = useState<number>(1);
+    const [maxItemNum, setMaxItemNum] = useState<number>(0);
+    const [resItemNum, setResItemNum] = useState<number>(0);
+    
+    const [startTime, setStartTime] = useState<number>(0);
+    const [now, setNow] = useState<number>(0);
+    const [usedTime, setUsedTime] = useState<number>(0);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    
     const [queue, setQueue] = useState<MySymbol[]>([]);
     const [sortedQueue, setSortedQueue] = useState<
         Record<MySymbol['id'], number>
@@ -120,6 +130,18 @@ const App: FC = () => {
     useEffect(() => {
         restart(level);
     }, [curTheme]);
+
+    useEffect(() => {
+        if (startTime && now) setUsedTime(now - startTime);
+    }, [now]);
+    const startTimer = (restart?: boolean) => {
+        setStartTime(Date.now() - 0);
+        setNow(Date.now());
+        intervalRef.current && clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(() => {
+            setNow(Date.now());
+        }, 10);
+    };
 
     // sort queue
     useEffect(() => {
@@ -194,6 +216,10 @@ const App: FC = () => {
           .then(response => {
             setScene(makeScene(level + 1, curTheme.icons, response.result.scene, response.result.action));
             setLastAgentTarget(response.result.action);
+            setMaxItemNum(response.result.max_item_num);
+            setResItemNum(response.result.max_item_num);
+            setUsedTime(0);
+            startTimer(true);
         });
     };
 
@@ -214,6 +240,10 @@ const App: FC = () => {
           .then(response => {
             setScene(makeScene(level, curTheme.icons, response.result.scene, response.result.action));
             setLastAgentTarget(response.result.action);
+            setMaxItemNum(response.result.max_item_num);
+            setResItemNum(response.result.max_item_num);
+            setUsedTime(0);
+            startTimer(true);
         });
     };
 
@@ -227,6 +257,7 @@ const App: FC = () => {
         if (!once) {
             setBgmOn(true);
             setOnce(true);
+            startTimer();
         }
 
         const updateScene = scene.slice();
@@ -255,6 +286,7 @@ const App: FC = () => {
                 update(response.result.scene);
                 setLastAgentTarget(response.result.action);
                 updateScene[response.result.action].isAgentTarget = true;
+                setResItemNum(resItemNum - 1);
             }
             setExpired(response.statusCode === 501);
         });
@@ -326,7 +358,11 @@ const App: FC = () => {
                         </option>
                     ))}
                 </select>
-                Level: {level}
+                关卡: {level}/{maxLevel}
+                <br />
+                用时: {(usedTime / 1000).toFixed(2)}秒
+                <br />
+                总牌数: {maxItemNum}   剩余牌数: {resItemNum}
             </h3>
 
             <div className="app">

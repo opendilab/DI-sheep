@@ -92,6 +92,7 @@ class MainClass(Resource):
                     "status": "Execution action",
                     "result": {
                         "scene": scene,
+                        "max_item_num": env.total_item_num,
                     }
                 })
             elif cmd == 'step':
