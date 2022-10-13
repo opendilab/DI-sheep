@@ -138,9 +138,10 @@ const App: FC = () => {
     }, [curTheme]);
 
     useEffect(() => {
+        if (finished || queue.length >= 7 || expired) return;
         if (startTime && now) setUsedTime(now - startTime);
     }, [now]);
-    const startTimer = (restart?: boolean) => {
+    const startTimer = () => {
         setStartTime(Date.now() - 0);
         setNow(Date.now());
         intervalRef.current && clearInterval(intervalRef.current);
@@ -221,13 +222,14 @@ const App: FC = () => {
             setMaxItemNum(response.result.max_item_num);
             setResItemNum(response.result.max_item_num);
             setUsedTime(0);
-            startTimer(true);
+            startTimer();
         });
     };
 
     const restart = (level: number) => {
         setFinished(false);
         setExpired(false);
+        setUsedTime(0);  // necessary 
         setQueue([]);
         fetch(target_url,
           {
@@ -244,17 +246,23 @@ const App: FC = () => {
             setMaxItemNum(response.result.max_item_num);
             setResItemNum(response.result.max_item_num);
             setUsedTime(0);
-            startTimer(true);
+            startTimer();
         });
     };
 
     const clickSymbol = async (idx: number) => {
         // console.time("process");
         if (finished || animating) return;
+        if (queue.length >= 7) {
+            setTipText('挑战失败');
+            setFinished(true);
+            return;
+        }
 
         if (!once) {
             setBgmOn(true);
             setOnce(true);
+            setUsedTime(0);
             startTimer();
         }
 
@@ -314,7 +322,7 @@ const App: FC = () => {
             }
         }
 
-        if (updateQueue.length === 7) {
+        if (updateQueue.length >= 7) {
             setTipText('挑战失败');
             setFinished(true);
         }
