@@ -18,7 +18,7 @@ import { yhdTheme } from './themes/yhd';
 
 const themes = [defaultTheme, fishermanTheme, diTheme, mhlTheme, yhdTheme];
 
-const maxLevel = 10;
+const maxLevel = 2;
 const target_url = 'http://127.0.0.1:5000/DI-sheep/';
 // const target_url = 'https://opendilab.net/DI-sheep';
 
@@ -330,15 +330,15 @@ const App: FC = () => {
         if ((!updateScene.find((s) => s.status === 0))) {
             if (level === maxLevel) {
                 setTipText('全部关卡挑战成功');
-                setLevel(level + 1);
+                setQueue([]);
                 setFinished(true);
+                setAnimating(false);
                 return;
             }
             setTipText('本关成功');
-            setFinished(true);
             setLevel(level + 1);
             setQueue([]);
-            // restart(level + 1);
+            restart(level + 1);
         } else {
             setQueue(updateQueue);
         }
@@ -407,7 +407,7 @@ const App: FC = () => {
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一关' : ((level > maxLevel) ? '再试试最后一关' :'进入下一关')} </button>
+                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一关' : '再试试最后一关'} </button>
                 </div>
             )}
 
