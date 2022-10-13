@@ -327,15 +327,18 @@ const App: FC = () => {
             setFinished(true);
         }
 
-        if (!updateScene.find((s) => s.status !== 2)) {
+        if ((!updateScene.find((s) => s.status === 0))) {
             if (level === maxLevel) {
-                setTipText('挑战成功');
+                setTipText('全部关卡挑战成功');
+                setLevel(level + 1);
                 setFinished(true);
                 return;
             }
+            setTipText('本关成功');
+            setFinished(true);
             setLevel(level + 1);
             setQueue([]);
-            restart(level + 1);
+            // restart(level + 1);
         } else {
             setQueue(updateQueue);
         }
@@ -364,8 +367,9 @@ const App: FC = () => {
                 </select>
             </h3>
             <h3 className="flex-container flex-center">
-                关卡: {level}/{maxLevel}    用时: {(usedTime / 1000).toFixed(2)}秒    
-                总牌数: {maxItemNum}   剩余牌数: {resItemNum}
+                关卡: {level}/{maxLevel}    用时: {(usedTime / 1000).toFixed(2)}秒    总牌数: {maxItemNum}
+                <br />
+                1-9关全部可消，第10关会额外设置2张单独的牌
             </h3>
 
             <div className="app">
@@ -403,7 +407,7 @@ const App: FC = () => {
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一局' : '再来一局'} </button>
+                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一关' : ((level > maxLevel) ? '再试试最后一关' :'进入下一关')} </button>
                 </div>
             )}
 

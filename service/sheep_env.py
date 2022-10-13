@@ -57,10 +57,10 @@ class SheepEnv(gym.Env):
             [0, 7],
             [0, 8],
         ][min(4, self.level - 1)]
-        if self.level > 5:
+        if self.level >= 10:
             self.item_per_icon = 6 + (self.level - 5 + 1) // 2
             # add non-divisible items
-            self.item_non_div = min(4, self.level - 5)
+            self.item_non_div = 2
         else:
             self.item_per_icon = 6
             self.item_non_div = 0
