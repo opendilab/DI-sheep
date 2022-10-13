@@ -18,7 +18,7 @@ import { yhdTheme } from './themes/yhd';
 
 const themes = [defaultTheme, fishermanTheme, diTheme, mhlTheme, yhdTheme];
 
-const maxLevel = 2;
+const maxLevel = 10;
 const target_url = 'http://127.0.0.1:5000/DI-sheep/';
 // const target_url = 'https://opendilab.net/DI-sheep';
 
