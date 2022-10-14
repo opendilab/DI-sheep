@@ -205,6 +205,7 @@ const App: FC = () => {
             return;
         }
         setFinished(false);
+        setTipText('');
         setLevel(level + 1);
         setQueue([]);
         fetch(target_url,
@@ -229,6 +230,7 @@ const App: FC = () => {
     const restart = (level: number) => {
         setFinished(false);
         setExpired(false);
+        setTipText('');
         setUsedTime(0);  // necessary 
         setQueue([]);
         fetch(target_url,
@@ -275,6 +277,7 @@ const App: FC = () => {
             soundRefMap.current[symbol.icon.clickSound].currentTime = 0;
             soundRefMap.current[symbol.icon.clickSound].play();
         }
+        let status = false;
 
         fetch(target_url,
           {
@@ -293,6 +296,7 @@ const App: FC = () => {
                 setResItemNum(resItemNum - 1);
             }
             setExpired(response.statusCode === 501);
+            status = (response.statusCode === 501);
         });
 
         let updateQueue = queue.slice();
@@ -306,7 +310,7 @@ const App: FC = () => {
 
         const filterSame = updateQueue.filter((sb) => sb.icon === symbol.icon);
 
-        if (filterSame.length === 3) {
+        if (!status && filterSame.length === 3) {
             updateQueue = updateQueue.filter((sb) => sb.icon !== symbol.icon);
             for (const sb of filterSame) {
                 const find = updateScene.find((i) => i.id === sb.id);
@@ -322,12 +326,12 @@ const App: FC = () => {
             }
         }
 
-        if (updateQueue.length >= 7) {
+        if (!status && updateQueue.length >= 7) {
             setTipText('挑战失败');
             setFinished(true);
         }
 
-        if ((!updateScene.find((s) => s.status === 0))) {
+        if (!status && (!updateScene.find((s) => s.status === 0))) {
             if (level === maxLevel) {
                 setTipText('全部关卡挑战成功');
                 setQueue([]);
