@@ -31,16 +31,23 @@ class Item:
 
 class SheepEnv(gym.Env):
     max_level = 10
-    icons = [i for i in range(10)]
     R = 10
+    icons = [i for i in range(10)]
+    ranges = [
+        [2, 6],
+        [1, 6],
+        [1, 7],
+        [0, 7],
+        [0, 8],
+    ]
 
-    def __init__(self, level: int, bucket_length: int = 7, agent: bool = True) -> None:
+    def __init__(self, level: int, bucket_length: int = 7, agent: bool = True, max_padding: bool = False) -> None:
         self.level = level
         assert 1 <= self.level <= self.max_level
         self.bucket_length = bucket_length
         self.agent = agent
+        self.max_padding = max_padding
         self._make_game()
-        self._set_space()
 
     def seed(self, seed: int) -> None:
         self._seed = seed
@@ -50,13 +57,9 @@ class SheepEnv(gym.Env):
         # TODO wash scene
         self.icon_pool = self.icons[:2 * self.level]
         self.offset_pool = [0, 25, 50, 75][:1 + self.level]
-        self.range = [
-            [2, 6],
-            [1, 6],
-            [1, 7],
-            [0, 7],
-            [0, 8],
-        ][min(4, self.level - 1)]
+        self.selected_range = self.ranges[min(4, self.level - 1)]
+        self.max_item_per_icon = 9
+        self.max_level_item_num = len(self.icons) * self.max_item_per_icon + 2
         if self.level >= 10:
             self.item_per_icon = 6 + (self.level - 5 + 1) // 2
             # add non-divisible items
@@ -69,18 +72,18 @@ class SheepEnv(gym.Env):
         self.scene = []
         self.bucket = deque(maxlen=self.bucket_length)
 
-        N = self.range[1] - self.range[0] - 1
+        N = self.selected_range[1] - self.selected_range[0] - 1
         for i in range(len(self.icon_pool)):
             for j in range(self.item_per_icon):
-                row = self.range[0] + np.int(N * np.random.random())
-                column = self.range[0] + np.int(N * np.random.random())
+                row = self.selected_range[0] + np.int(N * np.random.random())
+                column = self.selected_range[0] + np.int(N * np.random.random())
                 offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
                 item = Item(self.icon_pool[i], offset, row, column)
                 self.scene.append(item)
         if self.item_non_div > 0:
             for icon in np.random.choice(self.icon_pool, size=self.item_non_div, replace=False):
-                row = self.range[0] + np.int(N * np.random.random())
-                column = self.range[0] + np.int(N * np.random.random())
+                row = self.selected_range[0] + np.int(N * np.random.random())
+                column = self.selected_range[0] + np.int(N * np.random.random())
                 offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
                 item = Item(int(icon), offset, row, column)
                 self.scene.append(item)
@@ -89,6 +92,7 @@ class SheepEnv(gym.Env):
         self.reward_3tiles = self.R * 0.5 / (len(self.scene) // 3)
 
         self._update_visible_accessible()
+        self._set_space()
 
     def _update_visible_accessible(self) -> None:
         for i in range(self.total_item_num):
@@ -175,13 +179,10 @@ class SheepEnv(gym.Env):
         return obs, rew, done, info
 
     def _get_obs(self) -> Dict:
-        N = self.range[1] - self.range[0]
-        # icon + x + y + accessible + visible
-        L = len(self.icons) + 2  # +2 for not visible and move out
-        item_size = L + 4 * N * 2 + 2 + 2
-        item_obs = np.zeros((self.total_item_num, item_size))
+        item_obs = np.zeros((self.total_item_num, self.item_size))
         action_mask = np.zeros(self.total_item_num).astype(np.uint8)
 
+        L, N = self.L, self.N
         p1, p2, p3 = L + N, L + N + N, L + N + N + 2
         for i in range(len(self.scene)):
             item = self.scene[i]
@@ -206,10 +207,12 @@ class SheepEnv(gym.Env):
         for i in range(len(bucket_icon_stat)):
             bucket_obs[i * 3 + bucket_icon_stat[i]] = 1
 
-        global_size = self.total_item_num // self.item_per_icon + 1 + self.bucket_length + 1
-        global_obs = np.zeros(global_size)
-        global_obs[self.cur_item_num // self.item_per_icon] = 1
-        global_obs[self.total_item_num // self.item_per_icon + 1 + len(self.bucket)] = 1
+        global_obs = np.zeros(self.global_size)
+        if self.max_padding:
+            global_obs[self.cur_item_num // self.max_item_per_icon] = 1
+        else:
+            global_obs[self.cur_item_num // self.item_per_icon] = 1
+        global_obs[self.global_size - self.bucket_length - 1 + len(self.bucket)] = 1
 
         return {
             'item_obs': item_obs,
@@ -219,19 +222,25 @@ class SheepEnv(gym.Env):
         }
 
     def _set_space(self) -> None:
-        N = self.range[1] - self.range[0]
-        L = len(self.icons) + 2
-        item_size = L + 4 * N * 2 + 2 + 2
+        if self.max_padding:
+            N = self.ranges[-1][1] - self.ranges[-1][0]
+            # icon + x + y + accessible + visible
+            L = len(self.icons) + 2  # +2 for not visible and move out
+        else:
+            N = self.selected_range[1] - self.selected_range[0]
+            # icon + x + y + accessible + visible
+            L = len(self.icon_pool) + 2  # +2 for not visible and move out
+        self.L, self.N = L, N
+        self.item_size = L + 4 * N * 2 + 2 + 2
+        if self.max_padding:
+            self.global_size = self.max_level_item_num // self.max_item_per_icon + 1 + self.bucket_length + 1
+        else:
+            self.global_size = self.total_item_num // self.item_per_icon + 1 + self.bucket_length + 1
         self.observation_space = gym.spaces.Dict(
             {
-                'item_obs': gym.spaces.Box(0, 1, dtype=np.float32, shape=(self.total_item_num, item_size)),
+                'item_obs': gym.spaces.Box(0, 1, dtype=np.float32, shape=(self.total_item_num, self.item_size)),
                 'bucket_obs': gym.spaces.Box(0, 1, dtype=np.float32, shape=(3 * len(self.icons), )),
-                'global_obs': gym.spaces.Box(
-                    0,
-                    1,
-                    dtype=np.float32,
-                    shape=(self.total_item_num // self.item_per_icon + 1 + self.bucket_length + 1, )
-                ),
+                'global_obs': gym.spaces.Box(0, 1, dtype=np.float32, shape=(self.global_size, )),
                 'action_mask': gym.spaces.Box(0, 1, dtype=np.float32, shape=(self.total_item_num, ))  # TODO
             }
         )

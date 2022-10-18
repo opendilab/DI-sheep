@@ -25,7 +25,6 @@ model = app.model(
 MAX_ENV_NUM = 50
 ENV_TIMEOUT_SECOND = 60
 envs = {}
-# only level 5-10, because they have the same obs space
 model = SheepModel(80, 30, 19)
 model.load_state_dict(torch.load('ckpt_best.pth.tar', map_location='cpu')['model'])
 
@@ -82,7 +81,8 @@ class MainClass(Resource):
                         response.headers.add('Access-Control-Allow-Origin', '*')
                         return response
                     else:
-                        env = SheepEnv(1, agent=True)
+                        env = SheepEnv(1, agent=True, max_padding=True)
+                        env.seed(0)
                         envs[ip] = {'env': env, 'update_time': time.time()}
                 else:
                     response = jsonify(

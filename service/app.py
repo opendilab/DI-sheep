@@ -87,14 +87,16 @@ class MainClass(Resource):
             if cmd == 'reset':
                 env.reset(arg)
                 scene = [item.to_json() for item in env.scene if item is not None]
-                response = jsonify({
-                    "statusCode": 200,
-                    "status": "Execution action",
-                    "result": {
-                        "scene": scene,
-                        "max_item_num": env.total_item_num,
+                response = jsonify(
+                    {
+                        "statusCode": 200,
+                        "status": "Execution action",
+                        "result": {
+                            "scene": scene,
+                            "max_item_num": env.total_item_num,
+                        }
                     }
-                })
+                )
             elif cmd == 'step':
                 _, _, done, _ = env.step(arg)
                 scene = [item.to_json() for item in env.scene if item is not None]
