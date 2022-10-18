@@ -423,7 +423,7 @@ const App: FC = () => {
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一关' : '再试试最后一关'} </button>
+                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一关' : '再试试上一关'} </button>
                 </div>
             )}
 
