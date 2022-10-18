@@ -56,7 +56,7 @@ class MainClass(Resource):
             t_start = time.time()
             data = request.json
             cmd, arg, uid = data['command'], data['argument'], data['uid']
-            ip = request.remote_addr + uid
+            ip = str(ip) + str(uid)
 
             if ip not in envs:
                 if cmd == 'reset':

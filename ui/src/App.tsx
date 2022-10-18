@@ -19,7 +19,8 @@ import { yhdTheme } from './themes/yhd';
 const themes = [defaultTheme, fishermanTheme, diTheme, mhlTheme, yhdTheme];
 
 const maxLevel = 10;
-const uid = randomString(4);
+const target_url = 'http://127.0.0.1:5000/DI-sheep/';
+// const target_url = 'https://opendilab.net/DI-sheep';
 
 interface MySymbol {
     id: string;
@@ -88,6 +89,7 @@ const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, isAgentTarget, status, o
     );
 };
 
+const uidApp = 'uid' + crypto.randomUUID();
 const App: FC = () => {
     const [curTheme, setCurTheme] = useState<Theme<any>>(diTheme);
     const [level, setLevel] = useState<number>(1);
@@ -132,9 +134,10 @@ const App: FC = () => {
     }, [curTheme]);
 
     useEffect(() => {
+        if (finished || queue.length >= 7 || expired) return;
         if (startTime && now) setUsedTime(now - startTime);
     }, [now]);
-    const startTimer = (restart?: boolean) => {
+    const startTimer = () => {
         setStartTime(Date.now() - 0);
         setNow(Date.now());
         intervalRef.current && clearInterval(intervalRef.current);
@@ -201,16 +204,17 @@ const App: FC = () => {
             return;
         }
         setFinished(false);
+        setTipText('');
         setLevel(level + 1);
         setQueue([]);
-        fetch('http://127.0.0.1:5000/DI-sheep/',
+        fetch(target_url,
           {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'reset', argument: level + 1, uid: uid})
+            body: JSON.stringify({command: 'reset', argument: level + 1, uid: uidApp})
           })
           .then(response => response.json())
           .then(response => {
@@ -219,22 +223,24 @@ const App: FC = () => {
             setMaxItemNum(response.result.max_item_num);
             setResItemNum(response.result.max_item_num);
             setUsedTime(0);
-            startTimer(true);
+            startTimer();
         });
     };
 
     const restart = (level: number) => {
         setFinished(false);
         setExpired(false);
+        setTipText('');
+        setUsedTime(0);  // necessary 
         setQueue([]);
-        fetch('http://127.0.0.1:5000/DI-sheep/',
+        fetch(target_url,
           {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'reset', argument: level, uid: uid})
+            body: JSON.stringify({command: 'reset', argument: level, uid: uidApp})
           })
           .then(response => response.json())
           .then(response => {
@@ -243,7 +249,7 @@ const App: FC = () => {
             setMaxItemNum(response.result.max_item_num);
             setResItemNum(response.result.max_item_num);
             setUsedTime(0);
-            startTimer(true);
+            startTimer();
         });
     };
 
@@ -253,10 +259,16 @@ const App: FC = () => {
             idx = lastAgentTarget;
         }
         if (finished || animating) return;
+        if (queue.length >= 7) {
+            setTipText('挑战失败');
+            setFinished(true);
+            return;
+        }
 
         if (!once) {
             setBgmOn(true);
             setOnce(true);
+            setUsedTime(0);
             startTimer();
         }
 
@@ -269,15 +281,16 @@ const App: FC = () => {
             soundRefMap.current[symbol.icon.clickSound].currentTime = 0;
             soundRefMap.current[symbol.icon.clickSound].play();
         }
+        let status = false;
 
-        fetch('http://127.0.0.1:5000/DI-sheep/',
+        fetch(target_url,
           {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             method: 'POST',
-            body: JSON.stringify({command: 'step', argument: idx, uid: uid})
+            body: JSON.stringify({command: 'step', argument: idx, uid: uidApp})
           })
           .then(response => response.json())
           .then(response => {
@@ -289,6 +302,7 @@ const App: FC = () => {
                 setResItemNum(resItemNum - 1);
             }
             setExpired(response.statusCode === 501);
+            status = (response.statusCode === 501);
         });
 
         let updateQueue = queue.slice();
@@ -298,11 +312,11 @@ const App: FC = () => {
 
         setAnimating(true);
         // console.timeEnd("process");
-        await waitTimeout(250);
+        await waitTimeout(150);
 
         const filterSame = updateQueue.filter((sb) => sb.icon === symbol.icon);
 
-        if (filterSame.length === 3) {
+        if (!status && filterSame.length === 3) {
             updateQueue = updateQueue.filter((sb) => sb.icon !== symbol.icon);
             for (const sb of filterSame) {
                 const find = updateScene.find((i) => i.id === sb.id);
@@ -318,17 +332,20 @@ const App: FC = () => {
             }
         }
 
-        if (updateQueue.length === 7) {
+        if (!status && updateQueue.length >= 7) {
             setTipText('挑战失败');
             setFinished(true);
         }
 
-        if (!updateScene.find((s) => s.status !== 2)) {
+        if (!status && (!updateScene.find((s) => s.status === 0))) {
             if (level === maxLevel) {
-                setTipText('挑战成功');
+                setTipText('全部关卡挑战成功');
+                setQueue([]);
                 setFinished(true);
+                setAnimating(false);
                 return;
             }
+            setTipText('本关成功');
             setLevel(level + 1);
             setQueue([]);
             restart(level + 1);
@@ -341,7 +358,7 @@ const App: FC = () => {
 
     return (
         <>
-            <h2>DI-sheep: 深度强化学习 + 羊了个羊 v0.1</h2>
+            <h2>DI-sheep: 深度强化学习 + 羊了个羊 </h2>
             <h6>
                 <GithubIcon />
             </h6>
@@ -358,11 +375,11 @@ const App: FC = () => {
                         </option>
                     ))}
                 </select>
-                关卡: {level}/{maxLevel}
+            </h3>
+            <h3 className="flex-container flex-center">
+                关卡: {level}/{maxLevel}    用时: {(usedTime / 1000).toFixed(2)}秒    总牌数: {maxItemNum}
                 <br />
-                用时: {(usedTime / 1000).toFixed(2)}秒
-                <br />
-                总牌数: {maxItemNum}   剩余牌数: {resItemNum}
+                1-9关全部可消，第10关会额外设置2张单独的牌
             </h3>
 
             <div className="app">
@@ -406,7 +423,7 @@ const App: FC = () => {
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一局' : '再来一局'} </button>
+                    <button onClick={() => restart(level)}> {expired ? '60s游戏过期，重来一关' : '再试试最后一关'} </button>
                 </div>
             )}
 

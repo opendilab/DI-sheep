@@ -21,7 +21,7 @@ P.S.S. 想了解更多深度强化学习相关知识？快来 [DI-engine](https:
 
 ## 快速上手
 
-- 如果想**在线试玩** --> [在线网页（施工中）](https://github.com/PaParaZz1/DI-sheep)
+- 如果想**在线试玩** --> [在线网页（改进中）](https://opendilab.net/sheep)
 - 如果想**本地部署/测试**
   - 服务端（Python）
     ```shell
@@ -88,8 +88,8 @@ P.S.S. 想了解更多深度强化学习相关知识？快来 [DI-engine](https:
 
 ## 应用
 - [x] 更多自定义主题和 BGM
+- [x] 在线网页端部署
 - [ ] 更多 AI 训练时的行为分析
-- [ ] 在线网页端部署
 - [ ] 移动端应用（欢迎Android/IOS开发者支持）
 
 
