@@ -5,6 +5,7 @@ import gym
 import json
 import uuid
 import numpy as np
+import random
 
 
 class Item:
@@ -15,8 +16,8 @@ class Item:
         self.row = row
         self.column = column
         self.uid = str(uuid.uuid4())
-        self.x = column * 100 + offset
-        self.y = row * 100 + offset
+        self.x = column * 100 + offset[0]
+        self.y = row * 100 + offset[1]
         self.grid_x = self.x % 25
         self.grid_y = self.y % 25
         self.accessible = 1
@@ -58,36 +59,63 @@ class SheepEnv(gym.Env):
         self.icon_pool = self.icons[:2 * self.level]
         self.offset_pool = [0, 25, 50, 75][:1 + self.level]
         self.selected_range = self.ranges[min(4, self.level - 1)]
-        self.max_item_per_icon = 9
+        self.max_item_per_icon = 10 * 3
         self.max_level_item_num = len(self.icons) * self.max_item_per_icon + 2
         if self.level >= 10:
-            self.item_per_icon = 6 + (self.level - 5 + 1) // 2
+            self.item_per_icon = (7 + (self.level - 5 + 1) // 2) * 3
             # add non-divisible items
             self.item_non_div = 2
         else:
-            self.item_per_icon = 6
+            self.item_per_icon = 7 * 3
             self.item_non_div = 0
-        self.total_item_num = len(self.icon_pool) * self.item_per_icon + self.item_non_div
 
         self.scene = []
         self.bucket = deque(maxlen=self.bucket_length)
 
         N = self.selected_range[1] - self.selected_range[0] - 1
-        for i in range(len(self.icon_pool)):
-            for j in range(self.item_per_icon):
-                row = self.selected_range[0] + np.int(N * np.random.random())
-                column = self.selected_range[0] + np.int(N * np.random.random())
-                offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
-                item = Item(self.icon_pool[i], offset, row, column)
-                self.scene.append(item)
+        box_level = 6
+        box_interval = 6
+        box_item_num = 13
+        n_row = N if self.level < box_level else N - 1
+        
+        item_list = [icon for icon in self.icon_pool for _ in range(self.item_per_icon)]
         if self.item_non_div > 0:
             for icon in np.random.choice(self.icon_pool, size=self.item_non_div, replace=False):
-                row = self.selected_range[0] + np.int(N * np.random.random())
-                column = self.selected_range[0] + np.int(N * np.random.random())
-                offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
-                item = Item(int(icon), offset, row, column)
-                self.scene.append(item)
+                item_list.append(int(icon))
+        random.shuffle(item_list)
+        self.total_item_num = len(item_list)
 
+        def put_item(item, row, col, offset=None):
+            if offset is None:
+                offset_x = random.choice(self.offset_pool)
+                offset_y = random.choice(self.offset_pool)
+                offset = [offset_x, offset_y]
+            item = Item(item, offset, row, col)
+            self.scene.append(item)
+
+        def random_put(item):
+            row = self.selected_range[0] + random.choice([_ for _ in range(n_row)])
+            column = self.selected_range[0] + random.choice([_ for _ in range(N)])
+            put_item(item, row, column)
+
+        if self.level >= box_level:
+            box_1, box_2, items_on_board = item_list[:box_item_num], item_list[box_item_num:box_item_num * 2], item_list[box_item_num * 2:]
+            # put boxes
+            r_box = self.selected_range[0] + N
+            for idx, item in enumerate(box_1):
+                column = self.selected_range[0]
+                put_item(item, r_box, column, [idx * box_interval, 0])
+            for idx, item in enumerate(box_2):
+                column = self.selected_range[1] - 1
+                put_item(item, r_box, column, [- idx * box_interval, 0])
+
+        else:
+            items_on_board = item_list
+        
+        # put board
+        for item in items_on_board:
+            random_put(item)    
+            
         self.cur_item_num = len(self.scene)
         self.reward_3tiles = self.R * 0.5 / (len(self.scene) // 3)
 
@@ -171,7 +199,7 @@ class SheepEnv(gym.Env):
             rew += self.R
             done = True
         elif len(self.bucket) == self.bucket_length:
-            rew -= self.R
+            rew -= self.R   # self.R * 2
             done = True
         else:
             done = False
