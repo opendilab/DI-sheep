@@ -11,14 +11,15 @@ from sheep_env import SheepEnv
 from sheep_model import SheepModel
 
 sheep_ppo_config = dict(
-    exp_name='sheep_ppo_seed0',
+    exp_name='level10/sheep_ppo_MLP_1M_seed0',
     env=dict(
         env_id='Sheep-v0',
-        level=2,
+        level=10,
         collector_env_num=8,
         evaluator_env_num=10,
         n_evaluator_episode=10,
-        stop_value=15,
+        # stop_value=15,
+        stop_value=1e6,
     ),
     policy=dict(
         cuda=True,
@@ -66,7 +67,7 @@ def sheep_env_fn(level):
     )
 
 
-def main(input_cfg, seed, max_env_step=int(1e7), max_train_iter=int(1e7)):
+def main(input_cfg, seed, max_env_step=int(1e6), max_train_iter=int(1e6)):
     cfg, create_cfg = input_cfg
     cfg = compile_config(cfg, seed=seed, auto=True, create_cfg=create_cfg)
     collector_env = create_env_manager(
@@ -80,8 +81,12 @@ def main(input_cfg, seed, max_env_step=int(1e7), max_train_iter=int(1e7)):
     set_pkg_seed(cfg.seed, use_cuda=cfg.policy.cuda)
 
     obs_space = collector_env._env_ref.observation_space
+    # model = SheepModel(
+    #     obs_space['item_obs'].shape[1], obs_space['bucket_obs'].shape[0], obs_space['global_obs'].shape[0]
+    # )
+    # 第二个参数传入牌的张数
     model = SheepModel(
-        obs_space['item_obs'].shape[1], obs_space['bucket_obs'].shape[0], obs_space['global_obs'].shape[0]
+        obs_space['item_obs'].shape[1], obs_space['item_obs'].shape[0], obs_space['bucket_obs'].shape[0], obs_space['global_obs'].shape[0]
     )
     policy = PPOPolicy(cfg.policy, model=model, enable_field=['learn', 'collect', 'eval'])
 
@@ -115,4 +120,24 @@ def main(input_cfg, seed, max_env_step=int(1e7), max_train_iter=int(1e7)):
 
 
 if __name__ == "__main__":
-    main([main_config, create_config], seed=0)
+    for seed in [0, 1, 2]:
+        main_config.exp_name = 'level10/sheep_ppo_2MLP_1M' + '_seed' + f'{seed}'
+        main([main_config, create_config], seed=seed)
+
+# def train(args):
+#     main_config.exp_name = 'level10/sheep_ppo_MLP_1M' + '_seed' + f'{args.seed}' + '_3M'
+#     serial_pipeline_dqn_vqvae([copy.deepcopy(main_config), copy.deepcopy(create_config)], seed=args.seed,
+#                               max_env_step=int(3e6))
+
+
+# if __name__ == "__main__":
+#     import copy
+#     import argparse
+#     from ding.entry import serial_pipeline_dqn_vqvae
+
+#     for seed in [0,1,2]:
+#         parser = argparse.ArgumentParser()
+#         parser.add_argument('--seed', '-s', type=int, default=seed)
+#         args = parser.parse_args()
+
+#         train(args)
