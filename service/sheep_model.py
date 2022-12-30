@@ -17,9 +17,10 @@ class SheepModel(nn.Module):
         # 3. two stage MLP
         self.trans_len = 16
         self.item_num = item_num
+        self.hidden_size = hidden_size
         self.item_encoder_1 = MLP(item_obs_size, hidden_size, self.trans_len, layer_num=3, activation=activation)
-        self.item_encoder_2 = MLP(self.trans_len*item_num, hidden_size, hidden_size, layer_num=2, activation=activation)
-        self.fc = nn.Linear(hidden_size, item_num)
+        self.item_encoder_2 = MLP(self.trans_len*self.item_num, hidden_size, self.item_num*hidden_size, layer_num=2, activation=activation)
+        # self.fc = nn.Linear(hidden_size, item_num)
         ### end 3
         self.bucket_encoder = MLP(bucket_obs_size, hidden_size, hidden_size, layer_num=3, activation=activation)
         self.global_encoder = MLP(global_obs_size, hidden_size, hidden_size, layer_num=2, activation=activation)
@@ -33,15 +34,16 @@ class SheepModel(nn.Module):
         item_embedding_1 = self.item_encoder_1(x['item_obs'])   # (B, M, L)
         item_embedding_2 = torch.reshape(item_embedding_1, [-1, self.trans_len*self.item_num])
         item_embedding = self.item_encoder_2(item_embedding_2)
+        item_embedding = torch.reshape(item_embedding, [-1, self.item_num, self.hidden_size])
         ### end3
         bucket_embedding = self.bucket_encoder(x['bucket_obs'])
         global_embedding = self.global_encoder(x['global_obs'])
 
         key = item_embedding
         query = bucket_embedding + global_embedding
-        # query = query.unsqueeze(1)
-        # logit = (key * query).sum(2)
-        logit = self.fc(key * query)    # 3
+        query = query.unsqueeze(1)
+        logit = (key * query).sum(2)
+        # logit = self.fc(key * query)    # 3
         logit.masked_fill_(~x['action_mask'].bool(), value=-1e9)
         return {'logit': logit}
 
@@ -51,12 +53,13 @@ class SheepModel(nn.Module):
         item_embedding_1 = self.item_encoder_1(x['item_obs'])   # (B, M, L)
         item_embedding_2 = torch.reshape(item_embedding_1, [-1, self.trans_len*self.item_num])
         item_embedding = self.item_encoder_2(item_embedding_2)
+        item_embedding = torch.reshape(item_embedding, [-1, self.item_num, self.hidden_size])
         ### end3
         bucket_embedding = self.bucket_encoder(x['bucket_obs'])
         global_embedding = self.global_encoder(x['global_obs'])
 
-        # embedding = item_embedding.mean(1) + bucket_embedding + global_embedding
-        embedding = item_embedding + bucket_embedding + global_embedding    # 3
+        embedding = item_embedding.mean(1) + bucket_embedding + global_embedding
+        # embedding = item_embedding + bucket_embedding + global_embedding    # 3
         value = self.value_head(embedding)
         return {'value': value.squeeze(1)}
 
@@ -67,19 +70,20 @@ class SheepModel(nn.Module):
         item_embedding_1 = self.item_encoder_1(x['item_obs'])   # (B, M, L)
         item_embedding_2 = torch.reshape(item_embedding_1, [-1, self.trans_len*self.item_num])
         item_embedding = self.item_encoder_2(item_embedding_2)
+        item_embedding = torch.reshape(item_embedding, [-1, self.item_num, self.hidden_size])
         ### end3
         bucket_embedding = self.bucket_encoder(x['bucket_obs']) # output: (batch_size, hidden_size)
         global_embedding = self.global_encoder(x['global_obs']) # output: (batch_size, hidden_size)
 
         key = item_embedding
         query = bucket_embedding + global_embedding
-        # query = query.unsqueeze(1)  # output: (batch_size, 1, hidden_size)
-        # logit = (key * query).sum(2)    # key * query: (batch_size, card_num, hidden_size)
-        logit = self.fc(key * query)    # 3
+        query = query.unsqueeze(1)  # output: (batch_size, 1, hidden_size)
+        logit = (key * query).sum(2)    # key * query: (batch_size, card_num, hidden_size)
+        # logit = self.fc(key * query)    # 3
         logit.masked_fill_(~x['action_mask'].bool(), value=-1e9)
 
-        # embedding = item_embedding.mean(1) + bucket_embedding + global_embedding
-        embedding = item_embedding + bucket_embedding + global_embedding
+        embedding = item_embedding.mean(1) + bucket_embedding + global_embedding
+        # embedding = item_embedding + bucket_embedding + global_embedding
         value = self.value_head(embedding)
         return {'logit': logit, 'value': value.squeeze(1)}
 

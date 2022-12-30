@@ -11,10 +11,10 @@ from sheep_env import SheepEnv
 from sheep_model import SheepModel
 
 sheep_ppo_config = dict(
-    exp_name='level10/sheep_ppo_MLP_1M_seed0',
+    exp_name='level9/sheep_ppo_MLP_1M_seed0',
     env=dict(
         env_id='Sheep-v0',
-        level=10,
+        level=9,
         collector_env_num=8,
         evaluator_env_num=10,
         n_evaluator_episode=10,
@@ -121,7 +121,7 @@ def main(input_cfg, seed, max_env_step=int(1e6), max_train_iter=int(1e6)):
 
 if __name__ == "__main__":
     for seed in [0, 1, 2]:
-        main_config.exp_name = 'level10/sheep_ppo_2MLP_1M' + '_seed' + f'{seed}'
+        main_config.exp_name = 'level9/sheep_ppo_2MLP_V2_1M' + '_seed' + f'{seed}'
         main([main_config, create_config], seed=seed)
 
 # def train(args):
