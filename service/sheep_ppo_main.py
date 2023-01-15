@@ -2,7 +2,7 @@ import os
 from easydict import EasyDict
 from tensorboardX import SummaryWriter
 from ding.config import compile_config
-from ding.envs import create_env_manager, DingEnvWrapper, FinalEvalRewardEnv
+from ding.envs import create_env_manager, DingEnvWrapper, EvalEpisodeReturnEnv
 from ding.policy import PPOPolicy
 from ding.worker import BaseLearner, create_serial_collector, InteractionSerialEvaluator
 from ding.utils import set_pkg_seed
@@ -61,7 +61,7 @@ create_config = sheep_ppo_create_config
 def sheep_env_fn(level):
     return DingEnvWrapper(
         SheepEnv(level), cfg={'env_wrapper': [
-            lambda env: FinalEvalRewardEnv(env),
+            lambda env: EvalEpisodeReturnEnv(env),
         ]}
     )
 

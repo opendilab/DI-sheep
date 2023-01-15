@@ -1,1 +1,1 @@
-DI-engine
+DI-engine>=0.4.5
