@@ -11,14 +11,15 @@ from sheep_env import SheepEnv
 from sheep_model import SheepModel
 
 sheep_ppo_config = dict(
-    exp_name='sheep_ppo_seed0',
+    exp_name='level9/sheep_ppo_MLP_1M_seed0',
     env=dict(
         env_id='Sheep-v0',
-        level=2,
+        level=10,
         collector_env_num=8,
         evaluator_env_num=10,
         n_evaluator_episode=10,
-        stop_value=15,
+        # stop_value=15,
+        stop_value=1e6,     # to run fixed env step
     ),
     policy=dict(
         cuda=True,
@@ -66,7 +67,7 @@ def sheep_env_fn(level):
     )
 
 
-def main(input_cfg, seed, max_env_step=int(1e7), max_train_iter=int(1e7)):
+def main(input_cfg, seed, max_env_step=int(1e6), max_train_iter=int(1e6)):
     cfg, create_cfg = input_cfg
     cfg = compile_config(cfg, seed=seed, auto=True, create_cfg=create_cfg)
     collector_env = create_env_manager(

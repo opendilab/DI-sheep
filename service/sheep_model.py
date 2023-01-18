@@ -3,11 +3,11 @@ import torch.nn as nn
 from ding.torch_utils import Transformer, MLP, unsqueeze, to_tensor
 
 
-class Item_Encoder(nn.Module):
+class ItemEncoder(nn.Module):
     encoder_type = ['TF', 'MLP', 'two_stage_MLP']
 
     def __init__(self, item_obs_size=60, item_num=30, item_encoder_type='TF', hidden_size=64, activation=nn.ReLU()):
-        super(Item_Encoder, self).__init__()
+        super(ItemEncoder, self).__init__()
         assert item_encoder_type in self.encoder_type, "not support item encoder type: {}/{}".format(item_encoder_type, self.encoder_type)
         self.item_encoder_type = item_encoder_type
         self.item_num = item_num
@@ -61,7 +61,7 @@ class SheepModel(nn.Module):
 
     def __init__(self, item_obs_size=60, item_num=30, item_encoder_type='TF', bucket_obs_size=30, global_obs_size=17, hidden_size=64, activation=nn.ReLU()):
         super(SheepModel, self).__init__()
-        self.item_encoder = Item_Encoder(item_obs_size, item_num, item_encoder_type, hidden_size, activation=activation)
+        self.item_encoder = ItemEncoder(item_obs_size, item_num, item_encoder_type, hidden_size, activation=activation)
         self.bucket_encoder = MLP(bucket_obs_size, hidden_size, hidden_size, layer_num=3, activation=activation)
         self.global_encoder = MLP(global_obs_size, hidden_size, hidden_size, layer_num=2, activation=activation)
         self.value_head = nn.Sequential(
