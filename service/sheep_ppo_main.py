@@ -2,7 +2,7 @@ import os
 from easydict import EasyDict
 from tensorboardX import SummaryWriter
 from ding.config import compile_config
-from ding.envs import create_env_manager, DingEnvWrapper, FinalEvalRewardEnv
+from ding.envs import create_env_manager, DingEnvWrapper, EvalEpisodeReturnEnv
 from ding.policy import PPOPolicy
 from ding.worker import BaseLearner, create_serial_collector, InteractionSerialEvaluator
 from ding.utils import set_pkg_seed
@@ -14,7 +14,7 @@ sheep_ppo_config = dict(
     exp_name='level9/sheep_ppo_MLP_1M_seed0',
     env=dict(
         env_id='Sheep-v0',
-        level=9,
+        level=10,
         collector_env_num=8,
         evaluator_env_num=10,
         n_evaluator_episode=10,
@@ -62,7 +62,7 @@ create_config = sheep_ppo_create_config
 def sheep_env_fn(level):
     return DingEnvWrapper(
         SheepEnv(level), cfg={'env_wrapper': [
-            lambda env: FinalEvalRewardEnv(env),
+            lambda env: EvalEpisodeReturnEnv(env),
         ]}
     )
 
@@ -81,12 +81,12 @@ def main(input_cfg, seed, max_env_step=int(1e6), max_train_iter=int(1e6)):
     set_pkg_seed(cfg.seed, use_cuda=cfg.policy.cuda)
 
     obs_space = collector_env._env_ref.observation_space
-    # model = SheepModel(
-    #     obs_space['item_obs'].shape[1], obs_space['bucket_obs'].shape[0], obs_space['global_obs'].shape[0]
-    # )
-    # 第二个参数传入牌的张数
     model = SheepModel(
-        obs_space['item_obs'].shape[1], obs_space['item_obs'].shape[0], obs_space['bucket_obs'].shape[0], obs_space['global_obs'].shape[0]
+        obs_space['item_obs'].shape[1],
+        obs_space['item_obs'].shape[0],
+        'TF',
+        obs_space['bucket_obs'].shape[0],
+        obs_space['global_obs'].shape[0]
     )
     policy = PPOPolicy(cfg.policy, model=model, enable_field=['learn', 'collect', 'eval'])
 
@@ -120,24 +120,6 @@ def main(input_cfg, seed, max_env_step=int(1e6), max_train_iter=int(1e6)):
 
 
 if __name__ == "__main__":
-    for seed in [0, 1, 2]:
-        main_config.exp_name = 'level9/sheep_ppo_2MLP_V2_1M' + '_seed' + f'{seed}'
-        main([main_config, create_config], seed=seed)
-
-# def train(args):
-#     main_config.exp_name = 'level10/sheep_ppo_MLP_1M' + '_seed' + f'{args.seed}' + '_3M'
-#     serial_pipeline_dqn_vqvae([copy.deepcopy(main_config), copy.deepcopy(create_config)], seed=args.seed,
-#                               max_env_step=int(3e6))
-
-
-# if __name__ == "__main__":
-#     import copy
-#     import argparse
-#     from ding.entry import serial_pipeline_dqn_vqvae
-
-#     for seed in [0,1,2]:
-#         parser = argparse.ArgumentParser()
-#         parser.add_argument('--seed', '-s', type=int, default=seed)
-#         args = parser.parse_args()
-
-#         train(args)
+    # for seed in [0, 1, 2]:
+    # main_config.exp_name = 'level10/sheep_ppo_mlp_hs256_ln9_1M' + '_seed' + f'{seed}'
+    main([main_config, create_config], seed=0)

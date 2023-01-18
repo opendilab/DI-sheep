@@ -6,7 +6,7 @@ from sheep_model import SheepModel
 @pytest.mark.unittest
 def test_naive():
     B, M = 3, 30
-    model = SheepModel()
+    model = SheepModel(item_num=30, item_encoder_type='two_stage_MLP')
     data = {
         'item_obs': torch.randn(B, M, 60),
         'bucket_obs': torch.randn(B, 30),
