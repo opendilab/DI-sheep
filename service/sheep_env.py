@@ -75,16 +75,16 @@ class SheepEnv(gym.Env):
         N = self.selected_range[1] - self.selected_range[0] - 1
         for i in range(len(self.icon_pool)):
             for j in range(self.item_per_icon):
-                row = self.selected_range[0] + np.int(N * np.random.random())
-                column = self.selected_range[0] + np.int(N * np.random.random())
-                offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
+                row = self.selected_range[0] + np.int64(N * np.random.random())
+                column = self.selected_range[0] + np.int64(N * np.random.random())
+                offset = self.offset_pool[np.int64(np.random.random() * len(self.offset_pool))]
                 item = Item(self.icon_pool[i], offset, row, column)
                 self.scene.append(item)
         if self.item_non_div > 0:
             for icon in np.random.choice(self.icon_pool, size=self.item_non_div, replace=False):
-                row = self.selected_range[0] + np.int(N * np.random.random())
-                column = self.selected_range[0] + np.int(N * np.random.random())
-                offset = self.offset_pool[np.int(np.random.random() * len(self.offset_pool))]
+                row = self.selected_range[0] + np.int64(N * np.random.random())
+                column = self.selected_range[0] + np.int64(N * np.random.random())
+                offset = self.offset_pool[np.int64(np.random.random() * len(self.offset_pool))]
                 item = Item(int(icon), offset, row, column)
                 self.scene.append(item)
 

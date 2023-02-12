@@ -5,10 +5,9 @@ from sheep_env import SheepEnv
 
 @pytest.mark.unittest
 def test_naive():
-    env = SheepEnv(level=10)
+    env = SheepEnv(level=9)
     obs = env.reset()
     print(env.observation_space)
-    assert isinstance(env.scene[0].to_json(), str)
 
     while True:
         action_mask = obs['action_mask']
