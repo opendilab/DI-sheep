@@ -25,8 +25,10 @@ model = app.model(
 MAX_ENV_NUM = 50
 ENV_TIMEOUT_SECOND = 60
 envs = {}
-model = SheepModel(80, 30, 19)
-model.load_state_dict(torch.load('ckpt_best.pth.tar', map_location='cpu')['model'])
+model = SheepModel(item_obs_size=80, item_num=30, global_obs_size=19)
+ckpt = torch.load('ckpt_best.pth.tar', map_location='cpu')['model']
+ckpt = {'item_encoder.encoder' + k.split('item_encoder')[-1] if 'item_encoder' in k else k: v for k, v in ckpt.items()}  # compatibility for v1 and v2 model
+model.load_state_dict(ckpt)
 
 
 def random_action(obs, env):
