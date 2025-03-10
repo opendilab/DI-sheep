@@ -47,7 +47,7 @@ P.S.S. 想了解更多深度强化学习相关知识？快来 [DI-engine](https:
     python3 -u sheep_ppo_main.py
     ```
 - 如果想使用定义好的 gym 羊了个羊环境 --> 点个 star 之后直接暴力 CTRL C+V 拿走 `service/sheep_env.py` 尽情魔改
-- 如果想获得训练好的深度强化学习模型 --> 访问 [OpenDILab官网下载链接](https://opendilab.net/download/DI-sheep/) （目前提供了两种试玩模型，但智能体仍有很多进步空间）
+- 如果想获得训练好的深度强化学习模型 --> 访问 [OpenDILab HuggingFace仓库](https://huggingface.co/OpenDILabCommunity/DI-sheep/tree/main) （目前提供了两种试玩模型，但智能体仍有很多进步空间）
 - 如果想了解更多深度强化学习相关知识 --> 欢迎参阅 [DI-engine](https://github.com/opendilab/DI-engine) 和[相关文档](https://di-engine-docs.readthedocs.io/zh_CN/latest/)
 - 如果想了解未来的更新计划 --> 请参阅[更新计划](#更新计划)
 - 如果有其他问题或想法 --> 欢迎 github ISSUE 区讨论，或是贡献 Pull requests
