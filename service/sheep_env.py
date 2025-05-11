@@ -26,7 +26,21 @@ class Item:
         return 'icon({})'.format(self.icon)
 
     def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=2)
+        def default_encoder(o):
+            if isinstance(o, np.integer): # 检查是否为 NumPy 整数类型
+                return int(o) # 转换为 Python 标准整数
+            # 如果需要处理其他 NumPy 类型，可以添加更多判断，例如：
+            # if isinstance(o, np.floating): # 检查是否为 NumPy 浮点数类型
+            #     return float(o) # 转换为 Python 标准浮点数
+            # if isinstance(o, np.ndarray): # 检查是否为 NumPy 数组
+            #     return o.tolist() # 转换为 Python 列表
+            try:
+                return o.__dict__ # 对于其他自定义对象，尝试返回 __dict__
+            except AttributeError:
+                # 如果还是没有 __dict__ 属性且不是已知类型，让 json 默认处理（可能会抛 TypeError）
+                return json.JSONEncoder().default(o)
+
+        return json.dumps(self, default=default_encoder, sort_keys=True, indent=2)
 
 
 class SheepEnv(gym.Env):

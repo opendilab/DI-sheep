@@ -26,6 +26,7 @@ P.S.S. 想了解更多深度强化学习相关知识？快来 [DI-engine](https:
   - 服务端（Python）
     ```shell
     # 预先安装好 Python3
+    conda create -n di-sheep python=3.9
     cd service
     pip install -r requirement.txt
     FLASK_APP=app.py flask run  # 玩家试玩
